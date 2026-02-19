@@ -159,6 +159,89 @@ def create_thread(inside: bool, allsizes: int):
         raise
 
 @mcp.tool()
+def list_bodies():
+    """Lists all bodies in the current Fusion 360 design with their properties (name, isSolid, volume, faces, edges, boundingBox)."""
+    try:
+        endpoint = config.ENDPOINTS["list_bodies"]
+        response = requests.get(endpoint, timeout=10)
+        return response.json()
+    except Exception as e:
+        logging.error("List bodies failed: %s", e)
+        raise
+
+@mcp.tool()
+def analyze_timeline():
+    """
+    Analysiert die Design-Timeline und gibt strukturierte Informationen über alle Features zurück.
+    Nützlich um Extrude-Features zu identifizieren, die eine Embedding-Korrektur benötigen
+    (z.B. Vorsprünge die nur auf der Oberfläche aufliegen statt in die Basis einzutauchen).
+
+    Gibt für jedes Feature zurück: index, name, entity_type, operation, extent distances,
+    sketch plane origin/normal, und ob es bereits zweiseitig ist.
+    """
+    try:
+        endpoint = config.ENDPOINTS["analyze_timeline"]
+        response = requests.get(endpoint, timeout=30)
+        return response.json()
+    except Exception as e:
+        logging.error("Analyze timeline failed: %s", e)
+        raise
+
+@mcp.tool()
+def embed_extrude(timeline_index: int, embed_depth: float):
+    """
+    Modifiziert ein Extrude-Feature, damit es in die Basis eintaucht (Embedding-Fix für 3D-Druck).
+    Nur für parametrische Designs mit Timeline.
+
+    Das Feature wird von einseitig auf zweiseitig geändert:
+    - Seite 1: Behält die ursprüngliche Extrusions-Distanz (nach oben)
+    - Seite 2: Fügt embed_depth in die entgegengesetzte Richtung hinzu (in die Basis hinein)
+
+    :param timeline_index: Index des Extrude-Features in der Design-Timeline (aus analyze_timeline)
+    :param embed_depth: Einbettungstiefe in cm (positiver Wert, z.B. 0.05 = 0.5mm)
+    """
+    try:
+        endpoint = config.ENDPOINTS["embed_extrude"]
+        payload = {
+            "timeline_index": timeline_index,
+            "embed_depth": embed_depth
+        }
+        headers = config.HEADERS
+        return send_request(endpoint, payload, headers)
+    except Exception as e:
+        logging.error("Embed extrude failed: %s", e)
+        raise
+
+@mcp.tool()
+def fix_embedding(embed_depth: float = 0.05, y_tolerance: float = 0.002):
+    """
+    Behebt das Ablöseproblem bei 3D-gedruckten Vorsprüngen (Protrusions) automatisch.
+    Funktioniert auch bei Direct Modeling Designs (ohne Timeline).
+
+    Vorgehensweise:
+    1. Analysiert alle Flächen des Körpers, um Vorsprung-Oberflächen zu finden
+       (kleine, nach oben gerichtete planare Flächen nahe der Oberkante)
+    2. Erkennt automatisch Form (Kreis/Rechteck) und Position jedes Vorsprungs
+    3. Erstellt Einbettungsgeometrie: Skizze auf einer Offset-XZ-Ebene unter dem Körper
+    4. Extrudiert mit Join-Operation, um die Vorsprünge in die Basis einzubetten
+
+    :param embed_depth: Einbettungstiefe in cm (Standard 0.05 = 0.5mm).
+                        Muss kleiner als die Vorsprunghöhe sein.
+    :param y_tolerance: Toleranz für die Erkennung der Vorsprung-Oberflächen in cm.
+    """
+    try:
+        endpoint = config.ENDPOINTS["fix_embedding"]
+        payload = {
+            "embed_depth": embed_depth,
+            "y_tolerance": y_tolerance
+        }
+        headers = config.HEADERS
+        return send_request(endpoint, payload, headers)
+    except Exception as e:
+        logging.error("Fix embedding failed: %s", e)
+        raise
+
+@mcp.tool()
 def test_connection():
     """Testes die Verbindung zum Fusion 360 Server."""
     try:

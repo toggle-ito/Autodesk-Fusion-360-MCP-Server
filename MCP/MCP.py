@@ -10,8 +10,18 @@ import math
 import os
 
 ModelParameterSnapshot = []
+BodiesSnapshot = []
+TimelineSnapshot = []
 httpd = None
 task_queue = queue.Queue()  # Queue für thread-safe Aktionen
+
+# On-demand bodies snapshot
+_bodies_requested = False
+_bodies_ready = threading.Event()
+
+# On-demand timeline snapshot
+_timeline_requested = False
+_timeline_ready = threading.Event()
 
 # Event Handler Variablen
 app = None
@@ -32,12 +42,26 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         super().__init__()
         
     def notify(self, args):
-        global task_queue, ModelParameterSnapshot, design, ui
+        global task_queue, ModelParameterSnapshot, BodiesSnapshot, TimelineSnapshot, design, ui
+        global _bodies_requested, _bodies_ready
+        global _timeline_requested, _timeline_ready
         try:
             if design:
                 # Parameter Snapshot aktualisieren
                 ModelParameterSnapshot = get_model_parameters(design)
-                
+
+                # Bodies snapshot: only compute when requested via HTTP
+                if _bodies_requested:
+                    BodiesSnapshot = list_bodies_info(design, ui)
+                    _bodies_requested = False
+                    _bodies_ready.set()
+
+                # Timeline snapshot: only compute when requested via HTTP
+                if _timeline_requested:
+                    TimelineSnapshot = analyze_timeline_features(design, ui)
+                    _timeline_requested = False
+                    _timeline_ready.set()
+
                 # Task-Queue abarbeiten
                 while not task_queue.empty():
                     try:
@@ -49,7 +73,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
                         if ui:
                             ui.messageBox(f"Task-Fehler: {str(e)}")
                         continue
-                        
+
         except Exception as e:
 
             pass
@@ -135,7 +159,11 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             draw_text(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7], task[8], task[9],task[10])
         elif task[0] == 'move_body':
             move_last_body(design,ui,task[1],task[2],task[3])
-        
+        elif task[0] == 'embed_extrude':
+            embed_extrude_feature(design, ui, task[1], task[2])
+        elif task[0] == 'fix_embedding':
+            fix_embedding_direct(design, ui, task[1], task[2])
+
 
 
 class TaskThread(threading.Thread):
@@ -1022,6 +1050,44 @@ def undo(design, ui):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
+def list_bodies_info(design, ui):
+    """
+    Return a list of all bodies in the design with their properties.
+    """
+    try:
+        rootComp = design.rootComponent
+        bodies = rootComp.bRepBodies
+        result = []
+        for i in range(bodies.count):
+            body = bodies.item(i)
+            bb = body.boundingBox
+            volume = -1
+            area = -1
+            try:
+                phys = body.physicalProperties
+                volume = phys.volume
+                area = phys.area
+            except Exception:
+                pass
+            result.append({
+                "index": i,
+                "name": body.name,
+                "isSolid": body.isSolid,
+                "isVisible": body.isVisible,
+                "faces": body.faces.count,
+                "edges": body.edges.count,
+                "volume_cm3": round(volume, 6),
+                "area_cm2": round(area, 6),
+                "boundingBox": {
+                    "min": [round(bb.minPoint.x, 4), round(bb.minPoint.y, 4), round(bb.minPoint.z, 4)],
+                    "max": [round(bb.maxPoint.x, 4), round(bb.maxPoint.y, 4), round(bb.maxPoint.z, 4)]
+                }
+            })
+        return result
+    except Exception:
+        return []
+
+
 def delete(design,ui):
     """
     Remove every body and sketch from the design so nothing is left
@@ -1191,7 +1257,10 @@ def export_as_STL(design, ui,Name):
 
 def get_model_parameters(design):
     model_params = []
-    user_params = design.userParameters
+    try:
+        user_params = design.userParameters
+    except RuntimeError:
+        return model_params
     for param in design.allParameters:
         if all(user_params.item(i) != param for i in range(user_params.count)):
             try:
@@ -1284,6 +1353,323 @@ def select_sketch(design,ui,Sketchname):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
+###Protrusion Analysis & Embedding Functions######
+
+def analyze_timeline_features(design, ui):
+    """
+    Analyze all timeline features and return structured info about each.
+    Useful for identifying extrude features that need embedding fixes.
+    """
+    try:
+        timeline = design.timeline
+        results = []
+        for i in range(timeline.count):
+            item = timeline.item(i)
+            entity = item.entity
+
+            info = {
+                "index": i,
+                "name": item.name,
+                "entity_type": type(entity).__name__ if entity else "Unknown",
+                "is_group": item.isGroup,
+                "is_suppressed": item.isSuppressed,
+            }
+
+            if isinstance(entity, adsk.fusion.ExtrudeFeature):
+                ext = entity
+                op_map = {
+                    adsk.fusion.FeatureOperations.JoinFeatureOperation: "Join",
+                    adsk.fusion.FeatureOperations.CutFeatureOperation: "Cut",
+                    adsk.fusion.FeatureOperations.IntersectFeatureOperation: "Intersect",
+                    adsk.fusion.FeatureOperations.NewBodyFeatureOperation: "NewBody",
+                    adsk.fusion.FeatureOperations.NewComponentFeatureOperation: "NewComponent",
+                }
+                info["operation"] = op_map.get(ext.operation, str(ext.operation))
+                info["has_two_extents"] = ext.hasTwoExtents
+
+                # Extent one
+                try:
+                    e1 = ext.extentOne
+                    info["extent_one_type"] = type(e1).__name__
+                    if isinstance(e1, adsk.fusion.DistanceExtentDefinition):
+                        info["extent_one_distance_cm"] = round(e1.distance.value, 6)
+                except Exception:
+                    pass
+
+                # Extent two (if two-sided)
+                if ext.hasTwoExtents:
+                    try:
+                        e2 = ext.extentTwo
+                        info["extent_two_type"] = type(e2).__name__
+                        if isinstance(e2, adsk.fusion.DistanceExtentDefinition):
+                            info["extent_two_distance_cm"] = round(e2.distance.value, 6)
+                    except Exception:
+                        pass
+
+                # Sketch and plane info
+                try:
+                    profiles = ext.profile
+                    sketch = None
+                    if isinstance(profiles, adsk.fusion.Profile):
+                        sketch = profiles.parentSketch
+                    elif hasattr(profiles, 'item') and profiles.count > 0:
+                        sketch = profiles.item(0).parentSketch
+
+                    if sketch:
+                        info["sketch_name"] = sketch.name
+                        try:
+                            ref = sketch.referencePlane
+                            if hasattr(ref, 'geometry') and ref.geometry:
+                                geo = ref.geometry
+                                origin = geo.origin
+                                normal = geo.normal
+                                info["sketch_plane_origin"] = [
+                                    round(origin.x, 6),
+                                    round(origin.y, 6),
+                                    round(origin.z, 6)
+                                ]
+                                info["sketch_plane_normal"] = [
+                                    round(normal.x, 6),
+                                    round(normal.y, 6),
+                                    round(normal.z, 6)
+                                ]
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+            elif isinstance(entity, adsk.fusion.Sketch):
+                sketch = entity
+                info["profile_count"] = sketch.profiles.count
+                info["curve_count"] = sketch.sketchCurves.count
+
+            results.append(info)
+
+        return results
+    except Exception as e:
+        return [{"error": str(e), "traceback": traceback.format_exc()}]
+
+
+def embed_extrude_feature(design, ui, timeline_index, embed_depth):
+    """
+    Modify an extrude feature to embed into the base by adding a second extent direction.
+    This fixes the zero-thickness junction problem in 3D printing.
+
+    Args:
+        timeline_index: Index of the extrude feature in the design timeline
+        embed_depth: Depth to embed in cm (positive value, extends in opposite direction)
+    """
+    try:
+        timeline = design.timeline
+
+        if timeline_index < 0 or timeline_index >= timeline.count:
+            if ui:
+                ui.messageBox(f"Invalid timeline index: {timeline_index} (timeline has {timeline.count} items)")
+            return
+
+        item = timeline.item(timeline_index)
+        entity = item.entity
+
+        if not isinstance(entity, adsk.fusion.ExtrudeFeature):
+            if ui:
+                ui.messageBox(f"Timeline item '{item.name}' (index {timeline_index}) is not an ExtrudeFeature, it is {type(entity).__name__}")
+            return
+
+        ext = entity
+
+        # Get current extent distance
+        e1 = ext.extentOne
+        if not isinstance(e1, adsk.fusion.DistanceExtentDefinition):
+            if ui:
+                ui.messageBox(f"Feature '{ext.name}' extent is not distance-based ({type(e1).__name__}). Cannot modify.")
+            return
+
+        current_distance = e1.distance.value
+
+        # Create two-sided extent: original distance on side one, embed_depth on side two
+        dist_one = adsk.fusion.DistanceExtentDefinition.create(
+            adsk.core.ValueInput.createByReal(current_distance))
+        dist_two = adsk.fusion.DistanceExtentDefinition.create(
+            adsk.core.ValueInput.createByReal(embed_depth))
+
+        taper_one = adsk.core.ValueInput.createByString("0 deg")
+        taper_two = adsk.core.ValueInput.createByString("0 deg")
+
+        result = ext.setTwoSidesExtent(dist_one, dist_two, taper_one, taper_two)
+
+        if not result and ui:
+            ui.messageBox(f"Failed to set two-sided extent on '{ext.name}'")
+
+    except Exception:
+        if ui:
+            ui.messageBox('Failed embed_extrude_feature:\n{}'.format(traceback.format_exc()))
+
+
+def fix_embedding_direct(design, ui, embed_depth=0.05, y_tolerance=0.002):
+    """
+    Fix protrusion embedding for direct modeling designs (no timeline).
+
+    Approach:
+    1. Find all small upward-facing planar faces near body max Y (protrusion tops)
+    2. For each, determine shape (circle or rectangle) and position
+    3. Create a sketch on an offset XZ plane at Y = -embed_depth
+    4. Draw all protrusion profiles in the sketch
+    5. Extrude with JoinFeatureOperation to merge with existing body
+
+    Args:
+        embed_depth: How far to embed into the base, in cm (0.05 = 0.5mm)
+        y_tolerance: Tolerance for identifying protrusion top faces, in cm
+    """
+    try:
+        rootComp = design.rootComponent
+        bodies = rootComp.bRepBodies
+
+        if bodies.count == 0:
+            if ui:
+                ui.messageBox("No bodies found.")
+            return
+
+        body = bodies.item(0)
+        body_bb = body.boundingBox
+        max_y = body_bb.maxPoint.y  # protrusion top Y (e.g. 0.045)
+
+        # Step 1: Find protrusion top faces
+        protrusions = []
+        for i in range(body.faces.count):
+            face = body.faces.item(i)
+            geo = face.geometry
+
+            # Only planar faces
+            if geo.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
+                continue
+
+            plane_geo = adsk.core.Plane.cast(geo)
+            normal = plane_geo.normal
+
+            # Upward-facing (normal Y component > 0.9)
+            if abs(normal.y) < 0.9:
+                continue
+            if normal.y < 0:
+                continue
+
+            # Near body max Y (protrusion top)
+            face_bb = face.boundingBox
+            face_center_y = (face_bb.minPoint.y + face_bb.maxPoint.y) / 2
+            if abs(face_center_y - max_y) > y_tolerance:
+                continue
+
+            # Determine shape from edges
+            edges = face.edges
+            is_circular = False
+            radius = 0
+            center_x = 0
+            center_z = 0
+
+            if edges.count == 1:
+                edge_geo = edges.item(0).geometry
+                if edge_geo.curveType == adsk.core.Curve3DTypes.Circle3DCurveType:
+                    circle = adsk.core.Circle3D.cast(edge_geo)
+                    is_circular = True
+                    radius = circle.radius
+                    center_x = circle.center.x
+                    center_z = circle.center.z
+
+            if is_circular:
+                protrusions.append({
+                    "type": "circle",
+                    "center_x": center_x,
+                    "center_z": center_z,
+                    "radius": radius,
+                })
+            else:
+                # Rectangular or other - use face bounding box
+                width_x = face_bb.maxPoint.x - face_bb.minPoint.x
+                width_z = face_bb.maxPoint.z - face_bb.minPoint.z
+                if width_x < 0.0001 or width_z < 0.0001:
+                    continue  # skip degenerate faces
+                protrusions.append({
+                    "type": "rect",
+                    "min_x": face_bb.minPoint.x,
+                    "min_z": face_bb.minPoint.z,
+                    "max_x": face_bb.maxPoint.x,
+                    "max_z": face_bb.maxPoint.z,
+                    "center_x": (face_bb.minPoint.x + face_bb.maxPoint.x) / 2,
+                    "center_z": (face_bb.minPoint.z + face_bb.maxPoint.z) / 2,
+                })
+
+        if not protrusions:
+            if ui:
+                ui.messageBox(
+                    f"No protrusion top faces found near Y={max_y:.4f}cm.\n"
+                    f"Total faces scanned: {body.faces.count}"
+                )
+            return
+
+        # Step 2: Create offset XZ plane at Y = -embed_depth
+        sketches = rootComp.sketches
+        planes = rootComp.constructionPlanes
+
+        planeInput = planes.createInput()
+        offsetValue = adsk.core.ValueInput.createByReal(-embed_depth)
+        planeInput.setByOffset(rootComp.xZConstructionPlane, offsetValue)
+        offsetPlane = planes.add(planeInput)
+
+        # Step 3: Create sketch with all protrusion profiles
+        sketch = sketches.add(offsetPlane)
+
+        for p in protrusions:
+            if p["type"] == "circle":
+                # XZ plane sketch: x maps to world X, y maps to world Z
+                center = adsk.core.Point3D.create(p["center_x"], p["center_z"], 0)
+                sketch.sketchCurves.sketchCircles.addByCenterRadius(center, p["radius"])
+            else:
+                # Rectangle
+                pt1 = adsk.core.Point3D.create(p["min_x"], p["min_z"], 0)
+                pt2 = adsk.core.Point3D.create(p["max_x"], p["max_z"], 0)
+                sketch.sketchCurves.sketchLines.addTwoPointRectangle(pt1, pt2)
+
+        # Step 4: Extrude all profiles with Join operation
+        extrudes = rootComp.features.extrudeFeatures
+        # Distance from -embed_depth to max_y = embed_depth + max_y
+        extrude_distance = embed_depth + max_y
+
+        profileCollection = adsk.core.ObjectCollection.create()
+        for pi in range(sketch.profiles.count):
+            profileCollection.add(sketch.profiles.item(pi))
+
+        if profileCollection.count == 0:
+            if ui:
+                ui.messageBox("No profiles created in sketch.")
+            return
+
+        extInput = extrudes.createInput(
+            profileCollection,
+            adsk.fusion.FeatureOperations.JoinFeatureOperation
+        )
+        distance = adsk.core.ValueInput.createByReal(extrude_distance)
+        extInput.setDistanceExtent(False, distance)
+        extrudes.add(extInput)
+
+        if ui:
+            circle_count = sum(1 for p in protrusions if p["type"] == "circle")
+            rect_count = sum(1 for p in protrusions if p["type"] == "rect")
+            ui.messageBox(
+                f"Embedding fix applied!\n\n"
+                f"Protrusions found: {len(protrusions)}\n"
+                f"  Circular: {circle_count}\n"
+                f"  Rectangular: {rect_count}\n"
+                f"Embed depth: {embed_depth}cm ({embed_depth*10:.1f}mm)\n"
+                f"Extrude distance: {extrude_distance:.4f}cm\n\n"
+                f"Please verify visually and re-export STL."
+            )
+
+    except Exception:
+        if ui:
+            ui.messageBox('Failed fix_embedding_direct:\n{}'.format(traceback.format_exc()))
+
+
+##############################################################################################
+
 # HTTP Server######
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -1299,7 +1685,27 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"ModelParameter": ModelParameterSnapshot}).encode('utf-8'))
-           
+
+            elif self.path == '/list_bodies':
+                global _bodies_requested, _bodies_ready
+                _bodies_ready.clear()
+                _bodies_requested = True
+                _bodies_ready.wait(timeout=5)
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"body_count": len(BodiesSnapshot), "bodies": BodiesSnapshot}).encode('utf-8'))
+
+            elif self.path == '/analyze_timeline':
+                global _timeline_requested, _timeline_ready
+                _timeline_ready.clear()
+                _timeline_requested = True
+                _timeline_ready.wait(timeout=10)
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"feature_count": len(TimelineSnapshot), "features": TimelineSnapshot}).encode('utf-8'))
+
             else:
                 self.send_error(404,'Not Found')
         except Exception as e:
@@ -1678,7 +2084,25 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Body wird verschoben"}).encode('utf-8'))
-            
+
+            elif path == '/embed_extrude':
+                timeline_index = int(data.get('timeline_index', 0))
+                embed_depth = float(data.get('embed_depth', 0.05))
+                task_queue.put(('embed_extrude', timeline_index, embed_depth))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": f"Extrude at timeline[{timeline_index}] will be embedded by {embed_depth}cm"}).encode('utf-8'))
+
+            elif path == '/fix_embedding':
+                embed_depth = float(data.get('embed_depth', 0.05))
+                y_tolerance = float(data.get('y_tolerance', 0.002))
+                task_queue.put(('fix_embedding', embed_depth, y_tolerance))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": f"Fix embedding started: depth={embed_depth}cm, tolerance={y_tolerance}cm"}).encode('utf-8'))
+
             else:
                 self.send_error(404,'Not Found')
 
@@ -1687,7 +2111,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def run_server():
     global httpd
-    server_address = ('localhost',5000)
+    server_address = ('127.0.0.1',5002)
     httpd = HTTPServer(server_address, Handler)
     httpd.serve_forever()
 
@@ -1719,7 +2143,7 @@ def run(context):
         taskThread.daemon = True
         taskThread.start()
 
-        ui.messageBox(f"Fusion HTTP Add-In gestartet! Port 5000.\nParameter geladen: {len(ModelParameterSnapshot)} Modellparameter")
+        ui.messageBox(f"Fusion HTTP Add-In gestartet! Port 5002.\nParameter geladen: {len(ModelParameterSnapshot)} Modellparameter")
 
         # HTTP-Server starten
         threading.Thread(target=run_server, daemon=True).start()

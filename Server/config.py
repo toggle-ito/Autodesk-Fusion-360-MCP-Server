@@ -1,7 +1,7 @@
 # Fusion 360 API Configuration
 
 # Base URL für den Fusion 360 Server
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://127.0.0.1:5002"
 
 # API Endpoints
 ENDPOINTS = {
@@ -40,7 +40,11 @@ ENDPOINTS = {
     "rectangular_pattern": f"{BASE_URL}/rectangular_pattern",
     "draw_text": f"{BASE_URL}/draw_text",
     "move_body": f"{BASE_URL}/move_body",
-    
+    "list_bodies": f"{BASE_URL}/list_bodies",
+    "analyze_timeline": f"{BASE_URL}/analyze_timeline",
+    "embed_extrude": f"{BASE_URL}/embed_extrude",
+    "fix_embedding": f"{BASE_URL}/fix_embedding",
+
 }
 
 # Request Headers
