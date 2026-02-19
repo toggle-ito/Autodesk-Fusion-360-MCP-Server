@@ -44,6 +44,7 @@ ENDPOINTS = {
     "analyze_timeline": f"{BASE_URL}/analyze_timeline",
     "embed_extrude": f"{BASE_URL}/embed_extrude",
     "fix_embedding": f"{BASE_URL}/fix_embedding",
+    "join_all_bodies": f"{BASE_URL}/join_all_bodies",
 
 }
 

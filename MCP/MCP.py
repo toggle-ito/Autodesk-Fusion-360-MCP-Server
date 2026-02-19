@@ -163,6 +163,8 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             embed_extrude_feature(design, ui, task[1], task[2])
         elif task[0] == 'fix_embedding':
             fix_embedding_direct(design, ui, task[1], task[2])
+        elif task[0] == 'join_all_bodies':
+            join_all_bodies(design, ui)
 
 
 
@@ -804,6 +806,36 @@ def boolean_operation(design,ui,op):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
+def join_all_bodies(design, ui):
+    """Join all bodies in the root component into a single body."""
+    try:
+        rootComp = design.rootComponent
+        bodies = rootComp.bRepBodies
+
+        if bodies.count <= 1:
+            if ui:
+                ui.messageBox(f"Only {bodies.count} body found, nothing to join.")
+            return
+
+        initial_count = bodies.count
+        while bodies.count > 1:
+            targetBody = bodies.item(0)
+            toolBody = bodies.item(bodies.count - 1)
+
+            combineFeatures = rootComp.features.combineFeatures
+            tools = adsk.core.ObjectCollection.create()
+            tools.add(toolBody)
+            inputCombine = combineFeatures.createInput(targetBody, tools)
+            inputCombine.isNewComponent = False
+            inputCombine.isKeepToolBodies = False
+            inputCombine.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+            combineFeatures.add(inputCombine)
+
+        if ui:
+            ui.messageBox(f"All bodies joined. {initial_count} -> {bodies.count}")
+    except Exception:
+        if ui:
+            ui.messageBox('Failed join_all_bodies:\n{}'.format(traceback.format_exc()))
 
 
 
@@ -1505,20 +1537,22 @@ def embed_extrude_feature(design, ui, timeline_index, embed_depth):
             ui.messageBox('Failed embed_extrude_feature:\n{}'.format(traceback.format_exc()))
 
 
-def fix_embedding_direct(design, ui, embed_depth=0.05, y_tolerance=0.002):
+def fix_embedding_direct(design, ui, embed_depth=0.05, tolerance=0.002):
     """
-    Fix protrusion embedding for direct modeling designs (no timeline).
+    Fix protrusion embedding for 3D printing.
 
-    Approach:
-    1. Find all small upward-facing planar faces near body max Y (protrusion tops)
-    2. For each, determine shape (circle or rectangle) and position
-    3. Create a sketch on an offset XZ plane at Y = -embed_depth
-    4. Draw all protrusion profiles in the sketch
-    5. Extrude with JoinFeatureOperation to merge with existing body
+    Automatically:
+    1. Joins all bodies into one (if multiple exist)
+    2. Auto-detects vertical axis from bounding box
+    3. Finds protrusion top faces
+    4. Extends each protrusion profile through the ENTIRE base plate
+       (sketch at base bottom, extrude to protrusion top)
+    5. Result: protrusions are extruded FROM the base, not sitting ON it
 
     Args:
-        embed_depth: How far to embed into the base, in cm (0.05 = 0.5mm)
-        y_tolerance: Tolerance for identifying protrusion top faces, in cm
+        embed_depth: Not used for offset anymore (kept for API compat).
+                     Protrusions always penetrate the full base thickness.
+        tolerance: Tolerance for identifying protrusion top faces, in cm
     """
     try:
         rootComp = design.rootComponent
@@ -1529,109 +1563,173 @@ def fix_embedding_direct(design, ui, embed_depth=0.05, y_tolerance=0.002):
                 ui.messageBox("No bodies found.")
             return
 
+        # Step 0: Auto-join all bodies if multiple exist
+        if bodies.count > 1:
+            initial_count = bodies.count
+            while bodies.count > 1:
+                targetBody = bodies.item(0)
+                toolBody = bodies.item(bodies.count - 1)
+                combineFeatures = rootComp.features.combineFeatures
+                tools = adsk.core.ObjectCollection.create()
+                tools.add(toolBody)
+                inputCombine = combineFeatures.createInput(targetBody, tools)
+                inputCombine.isNewComponent = False
+                inputCombine.isKeepToolBodies = False
+                inputCombine.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+                combineFeatures.add(inputCombine)
+
         body = bodies.item(0)
         body_bb = body.boundingBox
-        max_y = body_bb.maxPoint.y  # protrusion top Y (e.g. 0.045)
 
-        # Step 1: Find protrusion top faces
+        # Auto-detect vertical axis: the thinnest dimension of the bounding box
+        dx = body_bb.maxPoint.x - body_bb.minPoint.x
+        dy = body_bb.maxPoint.y - body_bb.minPoint.y
+        dz = body_bb.maxPoint.z - body_bb.minPoint.z
+
+        dims = {'x': dx, 'y': dy, 'z': dz}
+        vert_axis = min(dims, key=dims.get)
+
+        if vert_axis == 'z':
+            max_val = body_bb.maxPoint.z
+            min_val = body_bb.minPoint.z
+            sketch_plane = rootComp.xYConstructionPlane
+            def get_normal_component(n): return n.z
+            def get_face_center(fbb): return (fbb.minPoint.z + fbb.maxPoint.z) / 2
+            def get_circle_center(c): return (c.center.x, c.center.y)
+            def get_face_rect(fbb): return (fbb.minPoint.x, fbb.minPoint.y, fbb.maxPoint.x, fbb.maxPoint.y)
+            def get_face_widths(fbb): return (fbb.maxPoint.x - fbb.minPoint.x, fbb.maxPoint.y - fbb.minPoint.y)
+        elif vert_axis == 'y':
+            max_val = body_bb.maxPoint.y
+            min_val = body_bb.minPoint.y
+            sketch_plane = rootComp.xZConstructionPlane
+            def get_normal_component(n): return n.y
+            def get_face_center(fbb): return (fbb.minPoint.y + fbb.maxPoint.y) / 2
+            def get_circle_center(c): return (c.center.x, c.center.z)
+            def get_face_rect(fbb): return (fbb.minPoint.x, fbb.minPoint.z, fbb.maxPoint.x, fbb.maxPoint.z)
+            def get_face_widths(fbb): return (fbb.maxPoint.x - fbb.minPoint.x, fbb.maxPoint.z - fbb.minPoint.z)
+        else:  # x
+            max_val = body_bb.maxPoint.x
+            min_val = body_bb.minPoint.x
+            sketch_plane = rootComp.yZConstructionPlane
+            def get_normal_component(n): return n.x
+            def get_face_center(fbb): return (fbb.minPoint.x + fbb.maxPoint.x) / 2
+            def get_circle_center(c): return (c.center.y, c.center.z)
+            def get_face_rect(fbb): return (fbb.minPoint.y, fbb.minPoint.z, fbb.maxPoint.y, fbb.maxPoint.z)
+            def get_face_widths(fbb): return (fbb.maxPoint.y - fbb.minPoint.y, fbb.maxPoint.z - fbb.minPoint.z)
+
+        # Step 1: Find protrusion top faces (upward-facing, near body max)
         protrusions = []
         for i in range(body.faces.count):
             face = body.faces.item(i)
             geo = face.geometry
 
-            # Only planar faces
             if geo.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
                 continue
 
             plane_geo = adsk.core.Plane.cast(geo)
             normal = plane_geo.normal
 
-            # Upward-facing (normal Y component > 0.9)
-            if abs(normal.y) < 0.9:
+            nc = get_normal_component(normal)
+            if abs(nc) < 0.9:
                 continue
-            if normal.y < 0:
+            if nc < 0:
                 continue
 
-            # Near body max Y (protrusion top)
             face_bb = face.boundingBox
-            face_center_y = (face_bb.minPoint.y + face_bb.maxPoint.y) / 2
-            if abs(face_center_y - max_y) > y_tolerance:
+            face_center_v = get_face_center(face_bb)
+            if abs(face_center_v - max_val) > tolerance:
                 continue
 
-            # Determine shape from edges
             edges = face.edges
             is_circular = False
             radius = 0
-            center_x = 0
-            center_z = 0
+            center_u = 0
+            center_v = 0
 
-            if edges.count == 1:
-                edge_geo = edges.item(0).geometry
+            # Check ALL edges for circular geometry (not just single-edge faces)
+            for ei in range(edges.count):
+                edge_geo = edges.item(ei).geometry
                 if edge_geo.curveType == adsk.core.Curve3DTypes.Circle3DCurveType:
                     circle = adsk.core.Circle3D.cast(edge_geo)
                     is_circular = True
                     radius = circle.radius
-                    center_x = circle.center.x
-                    center_z = circle.center.z
+                    center_u, center_v = get_circle_center(circle)
+                    break
+
+            # Also detect circles by bounding box aspect ratio (nearly square = circle)
+            if not is_circular:
+                w1, w2 = get_face_widths(face_bb)
+                if w1 > 0.0001 and w2 > 0.0001:
+                    aspect = min(w1, w2) / max(w1, w2)
+                    face_area = face.area
+                    bbox_area = w1 * w2
+                    # Circle fills ~78.5% of its bounding box (pi/4)
+                    if aspect > 0.9 and bbox_area > 0 and abs(face_area / bbox_area - math.pi / 4) < 0.1:
+                        is_circular = True
+                        radius = (w1 + w2) / 4  # average diameter / 2
+                        min_u, min_v, max_u, max_v = get_face_rect(face_bb)
+                        center_u = (min_u + max_u) / 2
+                        center_v = (min_v + max_v) / 2
 
             if is_circular:
                 protrusions.append({
                     "type": "circle",
-                    "center_x": center_x,
-                    "center_z": center_z,
+                    "center_u": center_u,
+                    "center_v": center_v,
                     "radius": radius,
                 })
             else:
-                # Rectangular or other - use face bounding box
-                width_x = face_bb.maxPoint.x - face_bb.minPoint.x
-                width_z = face_bb.maxPoint.z - face_bb.minPoint.z
-                if width_x < 0.0001 or width_z < 0.0001:
-                    continue  # skip degenerate faces
+                w1, w2 = get_face_widths(face_bb)
+                if w1 < 0.0001 or w2 < 0.0001:
+                    continue
+                min_u, min_v, max_u, max_v = get_face_rect(face_bb)
                 protrusions.append({
                     "type": "rect",
-                    "min_x": face_bb.minPoint.x,
-                    "min_z": face_bb.minPoint.z,
-                    "max_x": face_bb.maxPoint.x,
-                    "max_z": face_bb.maxPoint.z,
-                    "center_x": (face_bb.minPoint.x + face_bb.maxPoint.x) / 2,
-                    "center_z": (face_bb.minPoint.z + face_bb.maxPoint.z) / 2,
+                    "min_u": min_u,
+                    "min_v": min_v,
+                    "max_u": max_u,
+                    "max_v": max_v,
                 })
 
         if not protrusions:
             if ui:
                 ui.messageBox(
-                    f"No protrusion top faces found near Y={max_y:.4f}cm.\n"
-                    f"Total faces scanned: {body.faces.count}"
+                    f"No protrusion top faces found.\n"
+                    f"Vertical axis: {vert_axis.upper()} (max={max_val:.4f}cm)\n"
+                    f"BBox: dx={dx:.4f} dy={dy:.4f} dz={dz:.4f}\n"
+                    f"Total faces scanned: {body.faces.count}\n"
+                    f"Bodies count: {bodies.count}"
                 )
             return
 
-        # Step 2: Create offset XZ plane at Y = -embed_depth
+        # Step 2: Create sketch at body bottom (min_val along vertical axis)
+        # This ensures protrusion profiles penetrate the ENTIRE base plate
         sketches = rootComp.sketches
         planes = rootComp.constructionPlanes
 
         planeInput = planes.createInput()
-        offsetValue = adsk.core.ValueInput.createByReal(-embed_depth)
-        planeInput.setByOffset(rootComp.xZConstructionPlane, offsetValue)
+        offsetValue = adsk.core.ValueInput.createByReal(min_val)
+        planeInput.setByOffset(sketch_plane, offsetValue)
         offsetPlane = planes.add(planeInput)
 
-        # Step 3: Create sketch with all protrusion profiles
+        # Step 3: Draw protrusion profiles on the sketch
+        # Slightly enlarge profiles (by 0.001cm = 10um) to avoid edge coincidence
+        # which causes ASM_EDGECOIN_PROBLEM in Fusion 360's kernel
+        EDGE_OFFSET = 0.001  # 10um
         sketch = sketches.add(offsetPlane)
 
         for p in protrusions:
             if p["type"] == "circle":
-                # XZ plane sketch: x maps to world X, y maps to world Z
-                center = adsk.core.Point3D.create(p["center_x"], p["center_z"], 0)
-                sketch.sketchCurves.sketchCircles.addByCenterRadius(center, p["radius"])
+                center = adsk.core.Point3D.create(p["center_u"], p["center_v"], 0)
+                sketch.sketchCurves.sketchCircles.addByCenterRadius(center, p["radius"] + EDGE_OFFSET)
             else:
-                # Rectangle
-                pt1 = adsk.core.Point3D.create(p["min_x"], p["min_z"], 0)
-                pt2 = adsk.core.Point3D.create(p["max_x"], p["max_z"], 0)
+                pt1 = adsk.core.Point3D.create(p["min_u"] - EDGE_OFFSET, p["min_v"] - EDGE_OFFSET, 0)
+                pt2 = adsk.core.Point3D.create(p["max_u"] + EDGE_OFFSET, p["max_v"] + EDGE_OFFSET, 0)
                 sketch.sketchCurves.sketchLines.addTwoPointRectangle(pt1, pt2)
 
-        # Step 4: Extrude all profiles with Join operation
+        # Step 4: Extrude from base bottom to protrusion top (full penetration)
         extrudes = rootComp.features.extrudeFeatures
-        # Distance from -embed_depth to max_y = embed_depth + max_y
-        extrude_distance = embed_depth + max_y
+        extrude_distance = max_val - min_val  # full body height
 
         profileCollection = adsk.core.ObjectCollection.create()
         for pi in range(sketch.profiles.count):
@@ -1653,14 +1751,16 @@ def fix_embedding_direct(design, ui, embed_depth=0.05, y_tolerance=0.002):
         if ui:
             circle_count = sum(1 for p in protrusions if p["type"] == "circle")
             rect_count = sum(1 for p in protrusions if p["type"] == "rect")
+            base_thickness = max_val - min_val
             ui.messageBox(
                 f"Embedding fix applied!\n\n"
+                f"Vertical axis: {vert_axis.upper()}\n"
                 f"Protrusions found: {len(protrusions)}\n"
                 f"  Circular: {circle_count}\n"
                 f"  Rectangular: {rect_count}\n"
-                f"Embed depth: {embed_depth}cm ({embed_depth*10:.1f}mm)\n"
-                f"Extrude distance: {extrude_distance:.4f}cm\n\n"
-                f"Please verify visually and re-export STL."
+                f"Penetration: full base thickness ({base_thickness:.4f}cm = {base_thickness*10:.2f}mm)\n"
+                f"Body range: {min_val:.4f} to {max_val:.4f}cm\n\n"
+                f"Protrusions now extend through the entire base plate."
             )
 
     except Exception:
@@ -2021,7 +2121,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Boolean Operation wird ausgeführt"}).encode('utf-8'))
-            
+
+            elif path == '/join_all_bodies':
+                task_queue.put(('join_all_bodies',))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Joining all bodies"}).encode('utf-8'))
+
             elif path == '/test_connection':
                 self.send_response(200)
                 self.send_header('Content-type','application/json')

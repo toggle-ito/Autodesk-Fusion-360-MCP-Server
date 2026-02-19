@@ -213,20 +213,36 @@ def embed_extrude(timeline_index: int, embed_depth: float):
         raise
 
 @mcp.tool()
+def join_all_bodies():
+    """
+    Verbindet alle Körper im Design zu einem einzigen Körper (Join/Union).
+    WICHTIG: Muss nach dem Erstellen mehrerer Körper (draw_box, draw_cylinder etc.)
+    aufgerufen werden, BEVOR fix_embedding verwendet wird.
+    """
+    try:
+        endpoint = config.ENDPOINTS["join_all_bodies"]
+        headers = config.HEADERS
+        return send_request(endpoint, {}, headers)
+    except Exception as e:
+        logging.error("Join all bodies failed: %s", e)
+        raise
+
+@mcp.tool()
 def fix_embedding(embed_depth: float = 0.05, y_tolerance: float = 0.002):
     """
     Behebt das Ablöseproblem bei 3D-gedruckten Vorsprüngen (Protrusions) automatisch.
-    Funktioniert auch bei Direct Modeling Designs (ohne Timeline).
 
-    Vorgehensweise:
-    1. Analysiert alle Flächen des Körpers, um Vorsprung-Oberflächen zu finden
-       (kleine, nach oben gerichtete planare Flächen nahe der Oberkante)
-    2. Erkennt automatisch Form (Kreis/Rechteck) und Position jedes Vorsprungs
-    3. Erstellt Einbettungsgeometrie: Skizze auf einer Offset-XZ-Ebene unter dem Körper
-    4. Extrudiert mit Join-Operation, um die Vorsprünge in die Basis einzubetten
+    Führt automatisch folgende Schritte aus:
+    1. Verbindet alle Körper zu einem (join_all_bodies ist nicht mehr nötig)
+    2. Erkennt die vertikale Achse (X/Y/Z) automatisch
+    3. Findet alle Vorsprung-Oberflächen (Kreis/Rechteck)
+    4. Erstellt Durchdringungsgeometrie: Vorsprungsprofile werden durch die
+       GESAMTE Basisplatte extrudiert (nicht nur aufgesetzt)
 
-    :param embed_depth: Einbettungstiefe in cm (Standard 0.05 = 0.5mm).
-                        Muss kleiner als die Vorsprunghöhe sein.
+    Ergebnis: Vorsprünge wachsen aus der Basis heraus, statt nur aufzuliegen.
+    Optimal für hochauflösende 3D-Drucker (10μm+).
+
+    :param embed_depth: Reserviert für API-Kompatibilität (Durchdringung ist immer voll).
     :param y_tolerance: Toleranz für die Erkennung der Vorsprung-Oberflächen in cm.
     """
     try:
