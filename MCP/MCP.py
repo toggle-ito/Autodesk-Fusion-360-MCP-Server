@@ -45,6 +45,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         global task_queue, ModelParameterSnapshot, BodiesSnapshot, TimelineSnapshot, design, ui
         global _bodies_requested, _bodies_ready
         global _timeline_requested, _timeline_ready
+        global _geometry_requested, _geometry_ready, _geometry_result
         try:
             if design:
                 # Parameter Snapshot aktualisieren
@@ -61,6 +62,13 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
                     TimelineSnapshot = analyze_timeline_features(design, ui)
                     _timeline_requested = False
                     _timeline_ready.set()
+
+                # Geometry snapshot: only compute when requested via HTTP
+                if _geometry_requested:
+                    global _geometry_result
+                    _geometry_result = get_body_geometry(design, ui, _geometry_requested - 1)
+                    _geometry_requested = False
+                    _geometry_ready.set()
 
                 # Task-Queue abarbeiten
                 while not task_queue.empty():
@@ -149,6 +157,8 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             create_thread(design, ui, task[1], task[2])
         elif task[0] == 'delete_everything':
             delete(design, ui)
+        elif task[0] == 'delete_body':
+            delete_body_by_index(design, ui, task[1])
         elif task[0] == 'boolean_operation':
             boolean_operation(design,ui,task[1])
         elif task[0] == 'draw_2d_rectangle':
@@ -807,35 +817,49 @@ def boolean_operation(design,ui,op):
 
 
 def join_all_bodies(design, ui):
-    """Join all bodies in the root component into a single body."""
+    """Join all bodies in the root component into a single body.
+    Uses batch combine: each combine operation joins up to BATCH_SIZE
+    tool bodies into body[0], drastically reducing feature count."""
+    BATCH_SIZE = 20
     try:
         rootComp = design.rootComponent
         bodies = rootComp.bRepBodies
 
         if bodies.count <= 1:
-            if ui:
-                ui.messageBox(f"Only {bodies.count} body found, nothing to join.")
             return
 
-        initial_count = bodies.count
         while bodies.count > 1:
             targetBody = bodies.item(0)
-            toolBody = bodies.item(bodies.count - 1)
-
-            combineFeatures = rootComp.features.combineFeatures
             tools = adsk.core.ObjectCollection.create()
-            tools.add(toolBody)
-            inputCombine = combineFeatures.createInput(targetBody, tools)
-            inputCombine.isNewComponent = False
-            inputCombine.isKeepToolBodies = False
-            inputCombine.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
-            combineFeatures.add(inputCombine)
+            # Collect up to BATCH_SIZE tool bodies
+            count = min(BATCH_SIZE, bodies.count - 1)
+            for i in range(1, count + 1):
+                tools.add(bodies.item(i))
 
-        if ui:
-            ui.messageBox(f"All bodies joined. {initial_count} -> {bodies.count}")
+            try:
+                combineFeatures = rootComp.features.combineFeatures
+                inputCombine = combineFeatures.createInput(targetBody, tools)
+                inputCombine.isNewComponent = False
+                inputCombine.isKeepToolBodies = False
+                inputCombine.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+                combineFeatures.add(inputCombine)
+            except Exception:
+                # If batch fails, try one-by-one for this batch
+                for i in range(tools.count - 1, -1, -1):
+                    try:
+                        single = adsk.core.ObjectCollection.create()
+                        single.add(bodies.item(1))
+                        inp = combineFeatures.createInput(bodies.item(0), single)
+                        inp.isNewComponent = False
+                        inp.isKeepToolBodies = False
+                        inp.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+                        combineFeatures.add(inp)
+                    except Exception:
+                        # Skip bodies that can't be joined
+                        break
+                break
     except Exception:
-        if ui:
-            ui.messageBox('Failed join_all_bodies:\n{}'.format(traceback.format_exc()))
+        pass
 
 
 
@@ -1140,6 +1164,73 @@ def delete(design,ui):
         if ui:
             ui.messageBox('Failed to delete:\n{}'.format(traceback.format_exc()))
 
+
+
+def delete_body_by_index(design, ui, body_index):
+    """
+    Remove a specific body by its index.
+    """
+    try:
+        rootComp = design.rootComponent
+        bodies = rootComp.bRepBodies
+        if body_index < 0 or body_index >= bodies.count:
+            if ui:
+                ui.messageBox(f"Invalid body index: {body_index} (have {bodies.count} bodies)")
+            return
+        body = bodies.item(body_index)
+        body.deleteMe()
+    except:
+        if ui:
+            ui.messageBox('Failed delete_body_by_index:\n{}'.format(traceback.format_exc()))
+
+
+def get_body_geometry(design, ui, body_index=0):
+    """Get detailed geometry: vertices, face info, edge info."""
+    try:
+        rootComp = design.rootComponent
+        bodies = rootComp.bRepBodies
+        if body_index >= bodies.count:
+            return {"error": "Invalid body index"}
+        body = bodies.item(body_index)
+
+        # Vertices
+        verts = []
+        for i in range(body.vertices.count):
+            p = body.vertices.item(i).geometry
+            verts.append([round(p.x, 6), round(p.y, 6), round(p.z, 6)])
+
+        # Faces with type and area
+        faces = []
+        for i in range(body.faces.count):
+            f = body.faces.item(i)
+            geo = f.geometry
+            face_type = type(geo).__name__
+            info = {"index": i, "type": face_type, "area_cm2": round(f.area, 8)}
+            if face_type == "Cylinder":
+                info["radius_cm"] = round(geo.radius, 6)
+                ax = geo.axis
+                info["axis"] = [round(ax.x, 4), round(ax.y, 4), round(ax.z, 4)]
+                org = geo.origin
+                info["origin"] = [round(org.x, 6), round(org.y, 6), round(org.z, 6)]
+            elif face_type == "Plane":
+                n = geo.normal
+                info["normal"] = [round(n.x, 4), round(n.y, 4), round(n.z, 4)]
+                # bounding box of the face
+                bb = f.boundingBox
+                info["bb_min"] = [round(bb.minPoint.x, 6), round(bb.minPoint.y, 6), round(bb.minPoint.z, 6)]
+                info["bb_max"] = [round(bb.maxPoint.x, 6), round(bb.maxPoint.y, 6), round(bb.maxPoint.z, 6)]
+            faces.append(info)
+
+        return {"vertex_count": len(verts), "vertices": verts,
+                "face_count": len(faces), "faces": faces}
+    except Exception as e:
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
+
+# On-demand geometry snapshot
+_geometry_requested = False
+_geometry_ready = threading.Event()
+_geometry_result = None
 
 
 def export_as_STEP(design, ui,Name):
@@ -1806,6 +1897,23 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"feature_count": len(TimelineSnapshot), "features": TimelineSnapshot}).encode('utf-8'))
 
+            elif self.path.startswith('/geometry'):
+                global _geometry_requested, _geometry_ready, _geometry_result
+                # Parse body_index from query string, default 0
+                bi = 0
+                if '?' in self.path:
+                    qs = self.path.split('?')[1]
+                    for param in qs.split('&'):
+                        if param.startswith('body_index='):
+                            bi = int(param.split('=')[1])
+                _geometry_ready.clear()
+                _geometry_requested = bi + 1  # offset by 1 so 0 is falsy-safe
+                _geometry_ready.wait(timeout=15)
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(_geometry_result or {}).encode('utf-8'))
+
             else:
                 self.send_error(404,'Not Found')
         except Exception as e:
@@ -2107,6 +2215,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Threaded Feature wird erstellt"}).encode('utf-8'))
                 
+            elif path == '/delete_body':
+                body_index = int(data.get('body_index', -1))
+                task_queue.put(('delete_body', body_index))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": f"Body {body_index} wird gelöscht"}).encode('utf-8'))
+
             elif path == '/delete_everything':
                 task_queue.put(('delete_everything',))
                 self.send_response(200)

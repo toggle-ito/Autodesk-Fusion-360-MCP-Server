@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Tri-Angle Axon Device — 6-unit Tray Design v5</title>
+<style>
+  body { background: #0f1117; color: #e5e7eb; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+  h1 { color: #f59e0b; font-size: 1.3em; }
+  h2 { color: #60a5fa; margin-top: 0; font-size: 1.05em; }
+  .subtitle { color: #9ca3af; font-size: 13px; margin-bottom: 16px; }
+  .card { background: #1a1e2e; border-radius: 8px; padding: 16px; border: 1px solid #2d3348; margin: 16px 0; }
+  .flex { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  table { border-collapse: collapse; font-size: 12px; }
+  th, td { border: 1px solid #3d4560; padding: 3px 8px; text-align: left; }
+  th { background: #252a3a; color: #f59e0b; }
+  td { background: #1a1e2e; }
+  .note { background: #1a2235; border-left: 3px solid #f59e0b; padding: 8px 12px; margin: 10px 0; font-size: 12px; line-height: 1.6; }
+  .section-title { color: #f59e0b; font-weight: bold; padding: 4px 0; }
+  svg text { font-family: 'Segoe UI', sans-serif; }
+  .angle-label { font-size: 16px; font-weight: bold; text-anchor: middle; }
+  .hyp-label { font-size: 10px; fill: #9ca3af; text-anchor: middle; }
+</style>
+</head>
+<body>
+
+<h1>三角形 軸索切断デバイス 3角度比較 × 2台 — トレイ設計 v5</h1>
+<p class="subtitle">70° / 90° / 110° の3角度バリアント × 各2台 = 計6台。スプラウト型Path2。embed 50μm補正済。</p>
+
+<div class="note">
+  <strong>実験目的:</strong> 内角(W2)の角度がスプラウト軸索のPath2進入率に与える影響を検証<br>
+  <strong>仮説:</strong> W2→W1方向に伸びる軸索のスプラウト偏向角 = 内角。小さい角度ほどスプラウトしやすい。<br>
+  ・70° → 偏向70°(容易)、W1軸索は110°でブロック → <b>W2選択性あり</b><br>
+  ・90° → 偏向90°(臨界閾値) → 対照群<br>
+  ・110° → 偏向110°(困難)、W1軸索は70°で通過 → <b>W1選択性あり(逆転)</b>
+</div>
+
+<div class="note">
+  <strong>設計変更 (v5):</strong><br>
+  ・<b>Path2はスプラウト型</b>: W2から直接出発せず、Path1上のW2から100μm地点でT字分岐<br>
+  ・<b>3角度バリアント</b>: 同一トレイに70°/90°/110°を各2台配置<br>
+  ・W3座標は角度により変化: W3 = (-D×sinθ, +D×cosθ), D=3500μm
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="sw" style="background:#4a6741"></span> リム</div>
+  <div class="legend-item"><span class="sw" style="background:#374151"></span> 土台</div>
+  <div class="legend-item"><span class="sw" style="background:#34d399"></span> ウェル</div>
+  <div class="legend-item"><span class="sw" style="background:#f87171"></span> シール</div>
+  <div class="legend-item"><span class="sw" style="background:#60a5fa"></span> ガイド</div>
+  <div class="legend-item"><span class="sw" style="background:#fb923c"></span> テーパー</div>
+  <div class="legend-item"><span class="sw" style="background:#fbbf24"></span> 軸索経路</div>
+  <div class="legend-item"><span class="sw" style="background:#c084fc"></span> スプラウト分岐点</div>
+</div>
+
+<!-- ===== 各角度デバイス詳細図 ===== -->
+<div class="card">
+<h2>各角度デバイス詳細</h2>
+<p style="color:#9ca3af; font-size:11px; margin:0 0 8px 0;">
+  N1⊥Path1(常に水平)、N2⊥Path2(常にPath2に90°直交)。テーパーは三角形の外側(針挿入側)。★=スプラウト分岐点。
+</p>
+<div class="flex">
+
+<!-- ===== 70° 詳細 ===== -->
+<!-- Path2 dir: (-120,-85)→ N2⊥ outward=(-85,120) normalized=(-0.578,0.816) = 左下 -->
+<div>
+<svg width="270" height="420" viewBox="-40 -40 300 450">
+  <text x="120" y="-20" class="angle-label" fill="#f59e0b">70°</text>
+  <text x="120" y="-5" class="hyp-label">W2軸索偏向70° — 容易</text>
+  <rect x="0" y="10" width="240" height="380" fill="#1a1e2e" stroke="#2d3348" rx="4"/>
+
+  <circle cx="150" cy="40" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="165" y="44" fill="#34d399" font-size="11" font-weight="bold">W1</text>
+  <circle cx="150" cy="330" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="165" y="334" fill="#34d399" font-size="11" font-weight="bold">W2</text>
+  <circle cx="30" cy="225" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="8" y="215" fill="#34d399" font-size="11" font-weight="bold">W3</text>
+
+  <!-- Path1 vertical -->
+  <line x1="150" y1="55" x2="150" y2="315" stroke="#fbbf24" stroke-width="3" opacity="0.6"/>
+  <text x="162" y="135" fill="#fbbf24" font-size="9">Path1</text>
+
+  <!-- Sprout ★ -->
+  <circle cx="150" cy="310" r="5" fill="#c084fc" stroke="#fff" stroke-width="1"/>
+  <text x="162" y="305" fill="#c084fc" font-size="10" font-weight="bold">★</text>
+
+  <!-- Path2 -->
+  <line x1="150" y1="310" x2="40" y2="230" stroke="#fbbf24" stroke-width="3" opacity="0.4" stroke-dasharray="5,3"/>
+  <text x="72" y="255" fill="#fbbf24" font-size="9">Path2</text>
+
+  <!-- Angle arc -->
+  <path d="M 150,285 A 25,25 0 0,0 130,298" fill="none" stroke="#f59e0b" stroke-width="2"/>
+  <text x="120" y="285" fill="#f59e0b" font-size="13" font-weight="bold">70°</text>
+
+  <!-- N1⊥Path1 = horizontal -->
+  <rect x="118" y="183" width="64" height="4" fill="#f87171" opacity="0.5"/>
+  <text x="112" y="180" fill="#f87171" font-size="8" text-anchor="end">Seal1</text>
+  <rect x="182" y="179" width="30" height="12" fill="#60a5fa" opacity="0.4"/>
+  <text x="197" y="175" fill="#60a5fa" font-size="7" text-anchor="middle">Guide</text>
+  <rect x="108" y="179" width="10" height="12" fill="#60a5fa" opacity="0.3"/>
+  <polygon points="212,176 235,165 235,200 212,195" fill="#fb923c" opacity="0.4"/>
+  <text x="230" y="185" fill="#fb923c" font-size="8">T1</text>
+
+  <!-- N2⊥Path2: direction (-0.578, 0.816) = 左下 (outward from triangle) -->
+  <!-- Path2 midpoint ≈ (95, 270). N2 along perpendicular. -->
+  <!-- Seal2: center(95,270), ±(−8.7,12.2) -->
+  <line x1="104" y1="258" x2="86" y2="282" stroke="#f87171" stroke-width="5" opacity="0.5"/>
+  <text x="110" y="250" fill="#f87171" font-size="8">Seal2</text>
+  <!-- Guide2 (insertion=outward, continue 左下) -->
+  <line x1="86" y1="282" x2="72" y2="302" stroke="#60a5fa" stroke-width="8" opacity="0.3"/>
+  <text x="58" y="296" fill="#60a5fa" font-size="7">Guide</text>
+  <!-- Taper2 (further 左下, OUTSIDE triangle) -->
+  <polygon points="72,302 52,330 42,322 60,296" fill="#fb923c" opacity="0.4"/>
+  <text x="35" y="340" fill="#fb923c" font-size="8">T2</text>
+  <!-- Guide non-ins (inward=右上, short) -->
+  <line x1="104" y1="258" x2="110" y2="250" stroke="#60a5fa" stroke-width="6" opacity="0.2"/>
+
+  <!-- 90° marker on N2 -->
+  <rect x="90" y="268" width="6" height="6" fill="none" stroke="#9ca3af" stroke-width="0.8" transform="rotate(-54,93,271)"/>
+
+  <!-- Axon arrow -->
+  <line x1="140" y1="320" x2="140" y2="60" stroke="#00d4ff" stroke-width="1" stroke-dasharray="2,3" opacity="0.4"/>
+  <polygon points="138,65 140,50 142,65" fill="#00d4ff" opacity="0.4"/>
+</svg>
+</div>
+
+<!-- ===== 90° 詳細 ===== -->
+<!-- Path2 dir: (-130,20)→ N2⊥ outward=(20,130) normalized=(0.152,0.988) = ほぼ真下 -->
+<div>
+<svg width="270" height="420" viewBox="-40 -40 300 450">
+  <text x="120" y="-20" class="angle-label" fill="#60a5fa">90°</text>
+  <text x="120" y="-5" class="hyp-label">W2軸索偏向90° — 臨界閾値</text>
+  <rect x="0" y="10" width="240" height="380" fill="#1a1e2e" stroke="#2d3348" rx="4"/>
+
+  <circle cx="150" cy="40" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="165" y="44" fill="#34d399" font-size="11" font-weight="bold">W1</text>
+  <circle cx="150" cy="330" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="165" y="334" fill="#34d399" font-size="11" font-weight="bold">W2</text>
+  <circle cx="20" cy="333" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="8" y="320" fill="#34d399" font-size="11" font-weight="bold">W3</text>
+
+  <line x1="150" y1="55" x2="150" y2="315" stroke="#fbbf24" stroke-width="3" opacity="0.6"/>
+  <text x="162" y="135" fill="#fbbf24" font-size="9">Path1</text>
+
+  <circle cx="150" cy="310" r="5" fill="#c084fc" stroke="#fff" stroke-width="1"/>
+  <text x="162" y="305" fill="#c084fc" font-size="10" font-weight="bold">★</text>
+
+  <!-- Path2 nearly horizontal left -->
+  <line x1="150" y1="310" x2="30" y2="331" stroke="#fbbf24" stroke-width="3" opacity="0.4" stroke-dasharray="5,3"/>
+  <text x="75" y="312" fill="#fbbf24" font-size="9">Path2</text>
+
+  <path d="M 150,285 A 25,25 0 0,0 125,305" fill="none" stroke="#60a5fa" stroke-width="2"/>
+  <text x="113" y="293" fill="#60a5fa" font-size="13" font-weight="bold">90°</text>
+
+  <!-- N1 -->
+  <rect x="118" y="183" width="64" height="4" fill="#f87171" opacity="0.5"/>
+  <text x="112" y="180" fill="#f87171" font-size="8" text-anchor="end">Seal1</text>
+  <rect x="182" y="179" width="30" height="12" fill="#60a5fa" opacity="0.4"/>
+  <rect x="108" y="179" width="10" height="12" fill="#60a5fa" opacity="0.3"/>
+  <polygon points="212,176 235,165 235,200 212,195" fill="#fb923c" opacity="0.4"/>
+  <text x="230" y="185" fill="#fb923c" font-size="8">T1</text>
+
+  <!-- N2⊥Path2: direction (0.152, 0.988) ≈ ほぼ真下 -->
+  <!-- Path2 midpoint ≈ (90, 320) -->
+  <line x1="88" y1="306" x2="90" y2="336" stroke="#f87171" stroke-width="5" opacity="0.5"/>
+  <text x="98" y="304" fill="#f87171" font-size="8">Seal2</text>
+  <line x1="90" y1="336" x2="92" y2="360" stroke="#60a5fa" stroke-width="8" opacity="0.3"/>
+  <text x="100" y="355" fill="#60a5fa" font-size="7">Guide</text>
+  <polygon points="86,360 98,360 100,388 84,388" fill="#fb923c" opacity="0.4"/>
+  <text x="104" y="382" fill="#fb923c" font-size="8">T2</text>
+  <line x1="88" y1="306" x2="87" y2="298" stroke="#60a5fa" stroke-width="6" opacity="0.2"/>
+
+  <!-- 90° marker -->
+  <rect x="84" y="312" width="6" height="6" fill="none" stroke="#9ca3af" stroke-width="0.8" transform="rotate(-9,87,315)"/>
+
+  <line x1="140" y1="320" x2="140" y2="60" stroke="#00d4ff" stroke-width="1" stroke-dasharray="2,3" opacity="0.4"/>
+  <polygon points="138,65 140,50 142,65" fill="#00d4ff" opacity="0.4"/>
+</svg>
+</div>
+
+<!-- ===== 110° 詳細 ===== -->
+<!-- Path2 dir: (-120,55)→ N2⊥ outward(away from W1)=(55,120) normalized=(0.417,0.909) = 右下 -->
+<div>
+<svg width="270" height="420" viewBox="-40 -40 300 450">
+  <text x="120" y="-20" class="angle-label" fill="#ef4444">110°</text>
+  <text x="120" y="-5" class="hyp-label">W2軸索偏向110° — 困難</text>
+  <rect x="0" y="10" width="240" height="380" fill="#1a1e2e" stroke="#2d3348" rx="4"/>
+
+  <circle cx="150" cy="40" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="165" y="44" fill="#34d399" font-size="11" font-weight="bold">W1</text>
+  <circle cx="150" cy="330" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="165" y="334" fill="#34d399" font-size="11" font-weight="bold">W2</text>
+  <circle cx="30" cy="368" r="10" fill="#34d399" opacity="0.8"/>
+  <text x="8" y="362" fill="#34d399" font-size="11" font-weight="bold">W3</text>
+
+  <line x1="150" y1="55" x2="150" y2="315" stroke="#fbbf24" stroke-width="3" opacity="0.6"/>
+  <text x="162" y="135" fill="#fbbf24" font-size="9">Path1</text>
+
+  <circle cx="150" cy="310" r="5" fill="#c084fc" stroke="#fff" stroke-width="1"/>
+  <text x="162" y="305" fill="#c084fc" font-size="10" font-weight="bold">★</text>
+
+  <!-- Path2 down-left -->
+  <line x1="150" y1="310" x2="38" y2="365" stroke="#fbbf24" stroke-width="3" opacity="0.4" stroke-dasharray="5,3"/>
+  <text x="72" y="350" fill="#fbbf24" font-size="9">Path2</text>
+
+  <path d="M 150,285 A 25,25 0 0,0 127,310" fill="none" stroke="#ef4444" stroke-width="2"/>
+  <text x="113" y="302" fill="#ef4444" font-size="13" font-weight="bold">110°</text>
+
+  <!-- N1 -->
+  <rect x="118" y="183" width="64" height="4" fill="#f87171" opacity="0.5"/>
+  <text x="112" y="180" fill="#f87171" font-size="8" text-anchor="end">Seal1</text>
+  <rect x="182" y="179" width="30" height="12" fill="#60a5fa" opacity="0.4"/>
+  <rect x="108" y="179" width="10" height="12" fill="#60a5fa" opacity="0.3"/>
+  <polygon points="212,176 235,165 235,200 212,195" fill="#fb923c" opacity="0.4"/>
+  <text x="230" y="185" fill="#fb923c" font-size="8">T1</text>
+
+  <!-- N2⊥Path2: direction (0.417, 0.909) = 右下 (outside triangle, away from W1) -->
+  <!-- Path2 midpoint ≈ (94, 338) -->
+  <line x1="88" y1="325" x2="100" y2="352" stroke="#f87171" stroke-width="5" opacity="0.5"/>
+  <text x="108" y="322" fill="#f87171" font-size="8">Seal2</text>
+  <line x1="100" y1="352" x2="110" y2="374" stroke="#60a5fa" stroke-width="8" opacity="0.3"/>
+  <text x="118" y="370" fill="#60a5fa" font-size="7">Guide</text>
+  <polygon points="110,374 120,396 130,392 118,368" fill="#fb923c" opacity="0.4"/>
+  <text x="134" y="395" fill="#fb923c" font-size="8">T2</text>
+  <line x1="88" y1="325" x2="84" y2="316" stroke="#60a5fa" stroke-width="6" opacity="0.2"/>
+
+  <!-- 90° marker -->
+  <rect x="90" y="332" width="6" height="6" fill="none" stroke="#9ca3af" stroke-width="0.8" transform="rotate(24,93,335)"/>
+
+  <line x1="140" y1="320" x2="140" y2="60" stroke="#00d4ff" stroke-width="1" stroke-dasharray="2,3" opacity="0.4"/>
+  <polygon points="138,65 140,50 142,65" fill="#00d4ff" opacity="0.4"/>
+</svg>
+</div>
+
+</div>
+</div>
+
+<!-- ===== スプラウト分岐詳細図 ===== -->
+<div class="card">
+<h2>スプラウト分岐点 詳細 (70°の例)</h2>
+<p style="color:#9ca3af; font-size:11px; margin:0 0 8px 0;">
+  Path1上のW2から100μm地点でPath2がT字分岐。W2軸索は偏向θで分岐、W1軸索は偏向(180°-θ)で阻害。
+</p>
+
+<svg width="500" height="260" viewBox="-20 -20 520 280">
+  <rect x="0" y="0" width="480" height="240" fill="#1a1e2e" stroke="#2d3348" rx="4"/>
+
+  <!-- Path1 vertical channel -->
+  <rect x="215" y="10" width="10" height="220" fill="#fbbf24" opacity="0.3" rx="1"/>
+  <text x="235" y="25" fill="#fbbf24" font-size="10">Path1</text>
+
+  <!-- W1 direction (top) -->
+  <text x="220" y="8" fill="#34d399" font-size="10" text-anchor="middle">↑ W1</text>
+
+  <!-- W2 direction (bottom) -->
+  <circle cx="220" cy="230" r="6" fill="#34d399" opacity="0.7"/>
+  <text x="235" y="234" fill="#34d399" font-size="10">W2</text>
+
+  <!-- Sprout point -->
+  <circle cx="220" cy="200" r="5" fill="#c084fc" stroke="#c084fc" stroke-width="2"/>
+  <text x="240" y="198" fill="#c084fc" font-size="10" font-weight="bold">★ 分岐点</text>
+  <text x="240" y="212" fill="#9ca3af" font-size="9">W2から100μm</text>
+
+  <!-- Path2 branching off -->
+  <line x1="220" y1="200" x2="60" y2="140" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4,2" opacity="0.7"/>
+  <text x="40" y="135" fill="#fbbf24" font-size="10">Path2 → W3</text>
+
+  <!-- W2 axon (going UP from W2) -->
+  <line x1="210" y1="228" x2="210" y2="50" stroke="#00d4ff" stroke-width="1.5" opacity="0.7"/>
+  <polygon points="208,55 210,40 212,55" fill="#00d4ff" opacity="0.7"/>
+  <text x="193" y="140" fill="#00d4ff" font-size="9" transform="rotate(-90,193,140)">W2軸索(上向き)</text>
+
+  <!-- Sprout from W2 axon -->
+  <line x1="210" y1="200" x2="90" y2="150" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.6"/>
+  <text x="130" y="160" fill="#00d4ff" font-size="9">スプラウト(偏向70°)</text>
+
+  <!-- Angle arc for W2 axon -->
+  <path d="M 210,175 A 25,25 0 0,0 192,190" fill="none" stroke="#f59e0b" stroke-width="2"/>
+  <text x="177" y="180" fill="#f59e0b" font-size="12" font-weight="bold">70°</text>
+
+  <!-- W1 axon (going DOWN from W1) -->
+  <line x1="230" y1="50" x2="230" y2="228" stroke="#ef4444" stroke-width="1.5" opacity="0.5"/>
+  <polygon points="228,223 230,238 232,223" fill="#ef4444" opacity="0.5"/>
+  <text x="247" y="140" fill="#ef4444" font-size="9" transform="rotate(90,247,140)">W1軸索(下向き)</text>
+
+  <!-- W1 axon blocked -->
+  <line x1="230" y1="200" x2="160" y2="170" stroke="#ef4444" stroke-width="1" stroke-dasharray="2,3" opacity="0.3"/>
+  <text x="290" y="198" fill="#ef4444" font-size="9">W1→Path2: 偏向110°</text>
+  <text x="290" y="212" fill="#ef4444" font-size="9" opacity="0.7">→ 臨界角超え = ブロック</text>
+
+  <!-- Legend box -->
+  <rect x="300" y="30" width="165" height="75" fill="#252a3a" rx="3" stroke="#3d4560"/>
+  <text x="310" y="48" fill="#9ca3af" font-size="10" font-weight="bold">角度依存性 (仮説)</text>
+  <line x1="310" y1="60" x2="320" y2="60" stroke="#00d4ff" stroke-width="2"/>
+  <text x="325" y="64" fill="#9ca3af" font-size="9">W2軸索: 偏向θ → 容易</text>
+  <line x1="310" y1="78" x2="320" y2="78" stroke="#ef4444" stroke-width="2"/>
+  <text x="325" y="82" fill="#9ca3af" font-size="9">W1軸索: 偏向(180°-θ) → 阻害</text>
+  <text x="310" y="98" fill="#9ca3af" font-size="8" opacity="0.6">※直接エビデンスなし(要検証)</text>
+</svg>
+</div>
+
+<!-- ===== 上面図 — トレイ全体 ===== -->
+<div class="card">
+<h2>上面図 — トレイ全体 (3角度 × 2台)</h2>
+<p style="color:#9ca3af; font-size:11px; margin:0 0 8px 0;">
+  列 = 角度バリアント、行 = レプリカ。リム2mm幅、空気穴6箇所。
+</p>
+
+<!-- Outer: ~27×20 mm = 594×440 px (1mm=22px) -->
+<!-- Rim: 2mm = 44px -->
+<!-- Inner: ~23×16mm = 506×352 px -->
+<svg width="750" height="580" viewBox="-50 -50 820 640">
+
+  <!-- Printer limit 30x20mm -->
+  <rect x="-33" y="-1" width="660" height="440" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,4" opacity="0.3"/>
+  <text x="297" y="-8" fill="#ef4444" font-size="11" text-anchor="middle" opacity="0.5">プリンタ上限 30×20mm</text>
+
+  <!-- Outer tray -->
+  <rect x="0" y="0" width="594" height="440" rx="3" fill="#374151" stroke="#4b5563" stroke-width="1.5"/>
+
+  <!-- Rim with air gaps -->
+  <!-- Top rim -->
+  <rect x="0" y="0" width="180" height="44" fill="#4a6741" rx="1"/>
+  <rect x="180" y="0" width="44" height="44" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="224" y="0" width="146" height="44" fill="#4a6741" rx="1"/>
+  <rect x="370" y="0" width="44" height="44" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="414" y="0" width="180" height="44" fill="#4a6741" rx="1"/>
+
+  <!-- Bottom rim -->
+  <rect x="0" y="396" width="180" height="44" fill="#4a6741" rx="1"/>
+  <rect x="180" y="396" width="44" height="44" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="224" y="396" width="146" height="44" fill="#4a6741" rx="1"/>
+  <rect x="370" y="396" width="44" height="44" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="414" y="396" width="180" height="44" fill="#4a6741" rx="1"/>
+
+  <!-- Left rim -->
+  <rect x="0" y="44" width="44" height="75" fill="#4a6741" rx="1"/>
+  <rect x="0" y="119" width="44" height="55" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="0" y="174" width="44" height="88" fill="#4a6741" rx="1"/>
+  <rect x="0" y="262" width="44" height="55" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="0" y="317" width="44" height="79" fill="#4a6741" rx="1"/>
+
+  <!-- Right rim -->
+  <rect x="550" y="44" width="44" height="75" fill="#4a6741" rx="1"/>
+  <rect x="550" y="119" width="44" height="55" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="550" y="174" width="44" height="88" fill="#4a6741" rx="1"/>
+  <rect x="550" y="262" width="44" height="55" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <rect x="550" y="317" width="44" height="79" fill="#4a6741" rx="1"/>
+
+  <!-- Inner cavity -->
+  <rect x="44" y="44" width="506" height="352" fill="#252a3a" stroke="#3d4560" stroke-width="0.5"/>
+
+  <!-- Column labels -->
+  <text x="128" y="62" fill="#f59e0b" font-size="12" text-anchor="middle" font-weight="bold">70°</text>
+  <text x="297" y="62" fill="#60a5fa" font-size="12" text-anchor="middle" font-weight="bold">90°</text>
+  <text x="466" y="62" fill="#ef4444" font-size="12" text-anchor="middle" font-weight="bold">110°</text>
+
+  <!-- Device templates -->
+  <defs>
+    <!-- 70° device: W3 upper-left, Taper2 = lower-left (OUTSIDE triangle) -->
+    <g id="d70">
+      <circle cx="0" cy="-38" r="5" fill="#34d399" opacity="0.7"/><!-- W1 -->
+      <circle cx="0" cy="38" r="5" fill="#34d399" opacity="0.7"/><!-- W2 -->
+      <circle cx="-46" cy="8" r="5" fill="#34d399" opacity="0.7"/><!-- W3 -->
+      <line x1="0" y1="-32" x2="0" y2="32" stroke="#fbbf24" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="0" cy="30" r="2.5" fill="#c084fc"/>
+      <line x1="0" y1="30" x2="-42" y2="10" stroke="#fbbf24" stroke-width="1.5" opacity="0.5" stroke-dasharray="3,2"/>
+      <!-- N1 + Taper1 right -->
+      <rect x="-10" y="-2" width="20" height="2.5" fill="#f87171" opacity="0.4"/>
+      <polygon points="10,-5 28,-10 28,5 10,5" fill="#fb923c" opacity="0.3"/>
+      <!-- N2⊥Path2, Taper2 toward lower-left (outside) -->
+      <line x1="-17" y1="25" x2="-28" y2="42" stroke="#f87171" stroke-width="2" opacity="0.3"/>
+      <polygon points="-28,42 -42,58 -34,62 -22,48" fill="#fb923c" opacity="0.3"/>
+    </g>
+    <!-- 90° device: W3 left, Taper2 = downward (OUTSIDE triangle) -->
+    <g id="d90">
+      <circle cx="0" cy="-38" r="5" fill="#34d399" opacity="0.7"/>
+      <circle cx="0" cy="38" r="5" fill="#34d399" opacity="0.7"/>
+      <circle cx="-50" cy="38" r="5" fill="#34d399" opacity="0.7"/>
+      <line x1="0" y1="-32" x2="0" y2="32" stroke="#fbbf24" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="0" cy="30" r="2.5" fill="#c084fc"/>
+      <line x1="0" y1="30" x2="-45" y2="36" stroke="#fbbf24" stroke-width="1.5" opacity="0.5" stroke-dasharray="3,2"/>
+      <rect x="-10" y="-2" width="20" height="2.5" fill="#f87171" opacity="0.4"/>
+      <polygon points="10,-5 28,-10 28,5 10,5" fill="#fb923c" opacity="0.3"/>
+      <!-- N2⊥Path2(horizontal)=vertical, Taper2 downward -->
+      <line x1="-22" y1="25" x2="-22" y2="42" stroke="#f87171" stroke-width="2" opacity="0.3"/>
+      <polygon points="-27,42 -17,42 -15,60 -29,60" fill="#fb923c" opacity="0.3"/>
+    </g>
+    <!-- 110° device: W3 lower-left, Taper2 = lower-left (OUTSIDE triangle) -->
+    <g id="d110">
+      <circle cx="0" cy="-38" r="5" fill="#34d399" opacity="0.7"/>
+      <circle cx="0" cy="38" r="5" fill="#34d399" opacity="0.7"/>
+      <circle cx="-46" cy="55" r="5" fill="#34d399" opacity="0.7"/>
+      <line x1="0" y1="-32" x2="0" y2="32" stroke="#fbbf24" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="0" cy="30" r="2.5" fill="#c084fc"/>
+      <line x1="0" y1="30" x2="-42" y2="52" stroke="#fbbf24" stroke-width="1.5" opacity="0.5" stroke-dasharray="3,2"/>
+      <rect x="-10" y="-2" width="20" height="2.5" fill="#f87171" opacity="0.4"/>
+      <polygon points="10,-5 28,-10 28,5 10,5" fill="#fb923c" opacity="0.3"/>
+      <!-- N2⊥Path2, Taper2 toward lower-right (outside, away from W1) -->
+      <line x1="-15" y1="45" x2="-28" y2="54" stroke="#f87171" stroke-width="2" opacity="0.3"/>
+      <polygon points="-28,54 -40,68 -32,72 -22,60" fill="#fb923c" opacity="0.3"/>
+    </g>
+  </defs>
+
+  <!-- Row 1 -->
+  <g transform="translate(128, 155)"><use href="#d70"/><text x="15" y="48" fill="#9ca3af" font-size="9" opacity="0.5">#1</text></g>
+  <g transform="translate(297, 155)"><use href="#d90"/><text x="15" y="48" fill="#9ca3af" font-size="9" opacity="0.5">#2</text></g>
+  <g transform="translate(466, 155)"><use href="#d110"/><text x="15" y="48" fill="#9ca3af" font-size="9" opacity="0.5">#3</text></g>
+
+  <!-- Row 2 -->
+  <g transform="translate(128, 310)"><use href="#d70"/><text x="15" y="48" fill="#9ca3af" font-size="9" opacity="0.5">#4</text></g>
+  <g transform="translate(297, 310)"><use href="#d90"/><text x="15" y="48" fill="#9ca3af" font-size="9" opacity="0.5">#5</text></g>
+  <g transform="translate(466, 310)"><use href="#d110"/><text x="15" y="48" fill="#9ca3af" font-size="9" opacity="0.5">#6</text></g>
+
+  <!-- Dimensions -->
+  <line x1="0" y1="470" x2="594" y2="470" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="0" y1="465" x2="0" y2="475" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="594" y1="465" x2="594" y2="475" stroke="#9ca3af" stroke-width="0.8"/>
+  <text x="297" y="488" fill="#9ca3af" font-size="11" text-anchor="middle">~27 mm (外寸)</text>
+
+  <line x1="630" y1="0" x2="630" y2="440" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="625" y1="0" x2="635" y2="0" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="625" y1="440" x2="635" y2="440" stroke="#9ca3af" stroke-width="0.8"/>
+  <text x="655" y="223" fill="#9ca3af" font-size="11" text-anchor="middle" transform="rotate(90,655,223)">~20 mm (外寸)</text>
+
+  <line x1="0" y1="505" x2="44" y2="505" stroke="#4a8741" stroke-width="0.8"/>
+  <line x1="0" y1="500" x2="0" y2="510" stroke="#4a8741" stroke-width="0.5"/>
+  <line x1="44" y1="500" x2="44" y2="510" stroke="#4a8741" stroke-width="0.5"/>
+  <text x="22" y="518" fill="#4a8741" font-size="9" text-anchor="middle">2mm rim</text>
+</svg>
+</div>
+
+<!-- ===== 断面図 ===== -->
+<div class="card">
+<div class="flex">
+
+<div>
+<h2>断面図 A-A' (長辺方向)</h2>
+<p style="color:#9ca3af; font-size:11px; margin:0 0 8px 0;">全角度共通。造形高 = embed 50μm + 実効突出。</p>
+
+<svg width="520" height="360" viewBox="-60 -90 580 400">
+  <rect x="0" y="0" width="460" height="120" fill="#374151" stroke="#4b5563" stroke-width="1"/>
+  <text x="230" y="65" fill="#6b7280" font-size="12" text-anchor="middle">土台 5mm</text>
+  <text x="230" y="82" fill="#6b7280" font-size="10" text-anchor="middle">(比率は誇張表示)</text>
+
+  <line x1="-30" y1="0" x2="490" y2="0" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="3,2" opacity="0.5"/>
+  <text x="500" y="4" fill="#f59e0b" font-size="9">Y=0</text>
+
+  <rect x="40" y="-4" width="380" height="4" fill="#f59e0b" opacity="0.15"/>
+  <text x="485" y="-1" fill="#f59e0b" font-size="7">embed 50μm</text>
+
+  <!-- Rim: 450μm=36px -->
+  <rect x="0" y="-40" width="40" height="40" fill="#4a6741" stroke="#6b8f5e" stroke-width="1"/>
+  <rect x="420" y="-40" width="40" height="40" fill="#4a6741" stroke="#6b8f5e" stroke-width="1"/>
+
+  <!-- PDMS水面 = rim top -->
+  <line x1="0" y1="-40" x2="460" y2="-40" stroke="#4488ff" stroke-width="0.8" stroke-dasharray="5,3" opacity="0.4"/>
+  <text x="400" y="-46" fill="#4488ff" font-size="8" opacity="0.5">← PDMS水面 (実効400μm)</text>
+
+  <!-- Well: 550μm=44px -->
+  <rect x="80" y="-48" width="14" height="48" fill="#34d399" opacity="0.7" rx="2"/>
+  <text x="87" y="-54" fill="#34d399" font-size="8" text-anchor="middle">Well</text>
+  <text x="87" y="-63" fill="#34d399" font-size="7" text-anchor="middle">550μm</text>
+  <line x1="80" y1="-48" x2="94" y2="-48" stroke="#34d399" stroke-width="1.5"/>
+  <text x="105" y="-52" fill="#34d399" font-size="7">↑ 100μm露出</text>
+
+  <!-- Seal: 220μm=18px -->
+  <rect x="130" y="-22" width="25" height="22" fill="#f87171" opacity="0.5"/>
+  <text x="142" y="-26" fill="#f87171" font-size="8" text-anchor="middle">Seal</text>
+  <text x="142" y="-35" fill="#f87171" font-size="7" text-anchor="middle">220μm</text>
+
+  <!-- Guide: 350μm=28px -->
+  <rect x="180" y="-32" width="20" height="32" fill="#60a5fa" opacity="0.5"/>
+  <text x="190" y="-36" fill="#60a5fa" font-size="8" text-anchor="middle">Guide</text>
+  <text x="190" y="-45" fill="#60a5fa" font-size="7" text-anchor="middle">350μm</text>
+
+  <!-- Axon: 220μm=18px -->
+  <rect x="230" y="-22" width="30" height="22" fill="#fbbf24" opacity="0.7"/>
+  <text x="245" y="-26" fill="#fbbf24" font-size="8" text-anchor="middle">Axon</text>
+  <text x="245" y="-35" fill="#fbbf24" font-size="7" text-anchor="middle">220μm</text>
+
+  <!-- Taper: 350μm=28px -->
+  <rect x="290" y="-32" width="40" height="32" fill="#fb923c" opacity="0.4" rx="1"/>
+  <text x="310" y="-36" fill="#fb923c" font-size="8" text-anchor="middle">Taper 350μm</text>
+
+  <!-- Well right -->
+  <rect x="360" y="-48" width="14" height="48" fill="#34d399" opacity="0.7" rx="2"/>
+
+  <!-- Dim: rim -->
+  <line x1="-15" y1="-40" x2="-15" y2="0" stroke="#6b8f5e" stroke-width="0.8"/>
+  <line x1="-20" y1="-40" x2="-10" y2="-40" stroke="#6b8f5e" stroke-width="0.5"/>
+  <line x1="-20" y1="0" x2="-10" y2="0" stroke="#6b8f5e" stroke-width="0.5"/>
+  <text x="-25" y="-16" fill="#6b8f5e" font-size="9" text-anchor="end">450μm造形</text>
+  <text x="-25" y="-5" fill="#6b8f5e" font-size="7" text-anchor="end">(実効400μm)</text>
+
+  <!-- Dim: base -->
+  <line x1="-40" y1="0" x2="-40" y2="120" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="-45" y1="0" x2="-35" y2="0" stroke="#9ca3af" stroke-width="0.5"/>
+  <line x1="-45" y1="120" x2="-35" y2="120" stroke="#9ca3af" stroke-width="0.5"/>
+  <text x="-50" y="65" fill="#9ca3af" font-size="9" text-anchor="end">5mm</text>
+
+  <line x1="0" y1="-65" x2="40" y2="-65" stroke="#4a8741" stroke-width="0.8"/>
+  <line x1="0" y1="-70" x2="0" y2="-60" stroke="#4a8741" stroke-width="0.5"/>
+  <line x1="40" y1="-70" x2="40" y2="-60" stroke="#4a8741" stroke-width="0.5"/>
+  <text x="20" y="-72" fill="#4a8741" font-size="8" text-anchor="middle">2mm</text>
+</svg>
+</div>
+
+<div>
+<h2>W3座標 (角度別)</h2>
+<p style="color:#9ca3af; font-size:11px; margin:0 0 8px 0;">W2=(0,0), W1=(0,+3500μm), D=3500μm</p>
+<table>
+<tr><th>内角θ</th><th>W3 X (μm)</th><th>W3 Z (μm)</th><th>sinθ</th><th>cosθ</th></tr>
+<tr><td style="color:#f59e0b">70°</td><td>-3289</td><td>+1297</td><td>0.9397</td><td>0.3420</td></tr>
+<tr><td style="color:#60a5fa">90°</td><td>-3500</td><td>+100</td><td>1.0000</td><td>0.0000</td></tr>
+<tr><td style="color:#ef4444">110°</td><td>-3289</td><td>-1097</td><td>0.9397</td><td>-0.3420</td></tr>
+<tr><td colspan="5" style="color:#9ca3af; font-size:10px;">
+  W3 = スプラウト点(0, +100) + 3500×(-sinθ, cosθ) → Path2長 = Path1長 = 3500μm
+</td></tr>
+</table>
+
+<br>
+<h2>偏向角マトリクス</h2>
+<table>
+<tr><th>内角θ</th><th>W2軸索偏向</th><th>W1軸索偏向</th><th>予想</th></tr>
+<tr><td style="color:#f59e0b">70°</td><td>70° (容易)</td><td>110° (阻害)</td><td>W2選択的</td></tr>
+<tr><td style="color:#60a5fa">90°</td><td>90° (臨界)</td><td>90° (臨界)</td><td>非選択的</td></tr>
+<tr><td style="color:#ef4444">110°</td><td>110° (阻害)</td><td>70° (容易)</td><td>W1選択的</td></tr>
+</table>
+</div>
+
+</div>
+</div>
+
+<!-- ===== 寸法表 ===== -->
+<div class="card">
+<h2>寸法仕様</h2>
+<div class="flex">
+
+<table>
+<tr><td colspan="3" class="section-title">トレイ外形</td></tr>
+<tr><th>項目</th><th>値</th><th>備考</th></tr>
+<tr><td>プリンタ上限</td><td>30 × 20 mm</td><td></td></tr>
+<tr><td>トレイ外寸</td><td><b>~27 × 20 mm</b></td><td>110°デバイスが最大</td></tr>
+<tr><td>キャビティ内寸</td><td>~23 × 16 mm</td><td>角度別フットプリントに依存</td></tr>
+<tr><td>土台厚</td><td><b>5.0 mm</b></td><td>Y=-5mm ～ Y=0</td></tr>
+<tr><td>リム幅</td><td><b>2.0 mm</b></td><td>四辺均等</td></tr>
+<tr><td>リム造形高</td><td><b>450 μm</b></td><td>実効400μm = PDMS水面</td></tr>
+<tr><td>デバイス間隔</td><td><b>0.8 mm</b></td><td>サイズ制約のため縮小</td></tr>
+<tr><td>空気穴 (左右)</td><td>2.5mm幅 × 各2箇所</td><td>リム全高の切れ目</td></tr>
+<tr><td>空気穴 (前後)</td><td>2.0mm幅 × 各1箇所</td><td>ノッチ型</td></tr>
+<tr><td>食い込み(embed)</td><td>50 μm</td><td>Y=0 ～ Y=+0.05mm</td></tr>
+</table>
+
+<table>
+<tr><td colspan="5" class="section-title">デバイス共通仕様 (embed 50μm補正済)</td></tr>
+<tr><th>部位</th><th>XZ寸法 (長×幅)</th><th>造形高(Y)</th><th>実効突出</th><th>備考</th></tr>
+<tr><td>配置</td><td colspan="3">3角度(70°/90°/110°) × 各2台 = 6台</td><td></td></tr>
+<tr><td>ウェル</td><td>φ600μm</td><td><b>550μm</b></td><td>500μm</td><td>PDMS面から100μm露出</td></tr>
+<tr><td>テーパー</td><td>1.5mm長 × 1mm→220μm</td><td><b>350μm</b></td><td>300μm</td><td>魚罠型ファネル</td></tr>
+<tr><td>ガイド(挿入側)</td><td>1.0mm長 × 220μm幅</td><td><b>350μm</b></td><td>300μm</td><td>テーパーと統一</td></tr>
+<tr><td>ガイド(非挿入側)</td><td>0.3mm長 × 220μm幅</td><td><b>350μm</b></td><td>300μm</td><td>テーパーと統一</td></tr>
+<tr><td>シール</td><td>1.5mm長 × 170μm幅</td><td><b>220μm</b></td><td>170μm</td><td>針φ200μm対応</td></tr>
+<tr><td>軸索経路</td><td>~1.4mm長 × 75μm幅</td><td><b>220μm</b></td><td>170μm</td><td>シールと同一高</td></tr>
+<tr><td>スプラウト分岐</td><td colspan="3">Path1上、W2から100μm地点</td><td>T字分岐</td></tr>
+</table>
+
+</div>
+</div>
+
+<!-- ===== 角度別フットプリント ===== -->
+<div class="card">
+<h2>角度別デバイスフットプリント (概算)</h2>
+<table>
+<tr><th>内角</th><th>X幅 (mm)</th><th>Z高 (mm)</th><th>W3位置</th><th>Taper2最遠端</th></tr>
+<tr><td style="color:#f59e0b">70°</td><td>~6.9</td><td>~6.4</td><td>左上</td><td>左下</td></tr>
+<tr><td style="color:#60a5fa">90°</td><td>~7.1</td><td>~7.1</td><td>真左</td><td>真下</td></tr>
+<tr><td style="color:#ef4444">110°</td><td>~6.9</td><td>~7.5</td><td>左下</td><td>右下</td></tr>
+</table>
+<p style="color:#9ca3af; font-size:11px; margin:8px 0 0 0;">
+  最大フットプリント(110°): 6.9×7.5mm → 3列2行+0.8mm間隔+4mmリム = ~26.3×19.8mm (30×20mm内)
+</p>
+</div>
+
+<!-- ===== 設計ポイント ===== -->
+<div class="card">
+<h2>設計ポイント</h2>
+<div style="font-size:12px; line-height:1.8;">
+  <strong>1. 3角度比較実験:</strong>
+  70°/90°/110°で軸索スプラウトの角度依存性を検証。臨界角(~90°)を挟んで上下に配置。<br>
+  <strong>2. スプラウト型Path2:</strong>
+  Path2はW2から直接出発せず、Path1上のW2から100μm地点でT字分岐。
+  W2→W1方向の軸索が分岐点で側枝を出してPath2に進入する想定。<br>
+  <strong>3. embed 50μm補正:</strong>
+  全突起は土台に50μm食い込む。造形高 = 実効突出 + 50μm。<br>
+  <strong>4. ウェル頂部がPDMS面から100μm露出:</strong>
+  ウェル実効500μm &gt; リム実効400μm → PDMS硬化後の貫通穴。<br>
+  <strong>5. テーパー/ガイド = 350μm造形(実効300μm):</strong>
+  PDMS水面(400μm)より100μm低い。段差なく針が通過。<br>
+  <strong>6. シール＝軸索経路 = 220μm造形(実効170μm):</strong>
+  針φ200μm対応。両者同一高で針が通る。<br>
+  <strong>7. 空気穴6箇所 / リム2mm / 土台5mm:</strong>
+  hari200um準拠。3Dプリント再現性・強度・剛性を確保。<br>
+  <strong>8. 角度依存性は仮説段階:</strong>
+  T字分岐でのスプラウト角度依存性の直接エビデンスなし。本実験で検証。
+</div>
+</div>
+
+</body>
+</html>

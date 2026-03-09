@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>W2 Well Zoom — Path1/Path2 Branch Point</title>
+<style>
+  body { margin: 0; background: #1a1a2e; color: #eee; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
+  h1 { margin: 18px 0 4px; font-size: 1.3em; color: #7fdbca; }
+  .sub { font-size: 0.8em; color: #888; margin-bottom: 12px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .card { background: #16213e; border-radius: 10px; padding: 10px; border: 1px solid #334; }
+  .card h2 { text-align: center; margin: 0 0 4px; font-size: 1em; color: #f0c040; }
+  .legend { display: flex; gap: 16px; margin: 12px 0; font-size: 0.82em; flex-wrap: wrap; justify-content: center; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend .swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+  table { margin: 14px auto; border-collapse: collapse; font-size: 0.85em; }
+  th, td { border: 1px solid #444; padding: 4px 10px; }
+  th { background: #223; color: #7fdbca; }
+  td { text-align: right; }
+</style>
+</head>
+<body>
+<h1>W2 Well Zoom — Path1 / Path2 分岐点</h1>
+<div class="sub">Path2 は Path1 上の分岐点 (W2外縁から200&mu;m) から生える — 修正後</div>
+<div class="legend">
+  <span><span class="swatch" style="background:#4fc3f7"></span>W2 Well (R=300&mu;m)</span>
+  <span><span class="swatch" style="background:#66bb6a"></span>Path1b</span>
+  <span><span class="swatch" style="background:#ef5350"></span>Path2a</span>
+  <span><span class="swatch" style="background:#fff176"></span>分岐点 (0, +500&mu;m)</span>
+  <span><span class="swatch" style="background:#ff8a65"></span>200&mu;m gap</span>
+</div>
+<div class="row" id="cards"></div>
+
+<table>
+  <tr><th></th><th>BRANCH_Z</th><th>W2上端</th><th>Gap</th><th>W3 座標 (X, Z)</th></tr>
+  <tbody id="tbl"></tbody>
+</table>
+
+<script>
+const ANGLES = [70, 90, 110];
+const WELL_R = 300;    // μm
+const BRANCH_Z = 500;  // μm from W2 center (= WELL_R + 200μm)
+const GAP_UM = 200;    // μm from W2 edge
+const PATH_HW = 37.5;  // half-width μm
+const D = 3500;        // μm Path2 length
+
+const W = 400, H = 420;
+const VIEW = 620;  // μm range from center
+
+function toSVG(x_um, z_um) {
+  return [W/2 + (x_um / VIEW) * (W/2), H/2 - (z_um / VIEW) * (H/2)];
+}
+
+function line(x1,y1,x2,y2,color,sw,dash) {
+  const d = dash ? ` stroke-dasharray="${dash}"` : '';
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${sw}"${d}/>`;
+}
+
+function text(x, y, txt, color, size, anchor) {
+  return `<text x="${x}" y="${y}" fill="${color}" font-size="${size}" text-anchor="${anchor||'middle'}" font-family="monospace">${txt}</text>`;
+}
+
+function rect4(pts, fill, opacity, stroke, sw) {
+  const d = pts.map((p,i) => `${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ') + ' Z';
+  return `<path d="${d}" fill="${fill}" fill-opacity="${opacity}" stroke="${stroke}" stroke-width="${sw}"/>`;
+}
+
+function buildCard(angle_deg) {
+  const theta = angle_deg * Math.PI / 180;
+  const sin_t = Math.sin(theta), cos_t = Math.cos(theta);
+  const p2x = -sin_t, p2z = cos_t;
+  const n2x = -cos_t, n2z = -sin_t;
+
+  const w3x = -D * sin_t, w3z = BRANCH_Z + D * cos_t;
+
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  svg += `<rect width="${W}" height="${H}" fill="#0d1117" rx="8"/>`;
+
+  // Grid
+  for (let g = -600; g <= 600; g += 100) {
+    const [gx1,gy1] = toSVG(-VIEW,g), [gx2,gy2] = toSVG(VIEW,g);
+    svg += line(gx1,gy1,gx2,gy2, '#1a1a2a', 0.5);
+    const [gx3,gy3] = toSVG(g,-VIEW), [gx4,gy4] = toSVG(g,VIEW);
+    svg += line(gx3,gy3,gx4,gy4, '#1a1a2a', 0.5);
+  }
+  // Axes
+  svg += line(...toSVG(-VIEW,0), ...toSVG(VIEW,0), '#333', 0.8);
+  svg += line(...toSVG(0,-VIEW), ...toSVG(0,VIEW), '#333', 0.8);
+
+  // Scale labels
+  for (let g = -500; g <= 500; g += 200) {
+    if (g === 0) continue;
+    svg += text(...toSVG(g, -20), g, '#444', 8);
+    svg += text(...toSVG(-30, g), g, '#444', 8);
+  }
+
+  // W2 Well circle
+  const [wcx, wcy] = toSVG(0, 0);
+  const wr = (WELL_R / VIEW) * (W/2);
+  svg += `<circle cx="${wcx}" cy="${wcy}" r="${wr}" fill="#4fc3f7" fill-opacity="0.1" stroke="#4fc3f7" stroke-width="1.5"/>`;
+  svg += `<circle cx="${wcx}" cy="${wcy}" r="2" fill="#4fc3f7" fill-opacity="0.5"/>`;
+  svg += text(wcx + wr + 8, wcy + 4, 'W2', '#4fc3f7', 11, 'start');
+
+  // W2 top edge line (z = WELL_R = 300μm)
+  svg += line(...toSVG(-100, WELL_R), ...toSVG(100, WELL_R), '#4fc3f7', 0.7, '3,2');
+
+  // 200μm gap annotation (W2 edge → branch point)
+  const [g1x, g1y] = toSVG(60, WELL_R);
+  const [g2x, g2y] = toSVG(60, BRANCH_Z);
+  svg += line(g1x,g1y, g2x,g2y, '#ff8a65', 2.5);
+  svg += line(g1x-4,g1y, g1x+4,g1y, '#ff8a65', 1.5);
+  svg += line(g2x-4,g2y, g2x+4,g2y, '#ff8a65', 1.5);
+  svg += text((g1x+g2x)/2 + 32, (g1y+g2y)/2 + 3, '200&mu;m', '#ff8a65', 10, 'start');
+
+  // Path1b (vertical, from top of view down to W2 top edge)
+  const p1b_show_top = VIEW - 40;
+  const p1b_bot = WELL_R;  // W2 top edge
+  const p1_pts = [
+    toSVG(-PATH_HW, p1b_show_top),
+    toSVG(PATH_HW, p1b_show_top),
+    toSVG(PATH_HW, p1b_bot),
+    toSVG(-PATH_HW, p1b_bot),
+  ];
+  svg += rect4(p1_pts, '#66bb6a', 0.3, '#66bb6a', 1.2);
+  // Arrow
+  const [arrx, arry] = toSVG(0, p1b_show_top);
+  svg += `<polygon points="${arrx-5},${arry} ${arrx+5},${arry} ${arrx},${arry-8}" fill="#66bb6a" opacity="0.7"/>`;
+  svg += text(arrx + 35, arry + 4, 'Path1b', '#66bb6a', 10);
+  svg += text(arrx + 35, arry + 16, '&uarr; Seal1', '#66bb6a', 9);
+
+  // Path1b bottom label
+  svg += text(...toSVG(-100, p1b_bot + 20), 'Well edge', '#66bb6a', 8);
+  svg += text(...toSVG(-100, p1b_bot - 15), 'z=300', '#66bb6a', 8);
+
+  // Branch point
+  const [bpx, bpy] = toSVG(0, BRANCH_Z);
+  svg += `<circle cx="${bpx}" cy="${bpy}" r="6" fill="#fff176" fill-opacity="0.9" stroke="#fff" stroke-width="1.5"/>`;
+  svg += text(bpx + 12, bpy - 10, '分岐点', '#fff176', 10, 'start');
+  svg += text(bpx + 12, bpy + 5, '(0, +500)', '#fff176', 9, 'start');
+
+  // Path2 ray (dashed, from branch point)
+  const ray_len = 550;
+  svg += line(...toSVG(0, BRANCH_Z), ...toSVG(ray_len*p2x, BRANCH_Z + ray_len*p2z), '#ef5350', 0.5, '4,3');
+
+  // Path2a body (from branch point outward)
+  const p2a_end = 500;  // show ~500μm of Path2a for visualization
+  const p2a_pts = [
+    toSVG(0*p2x + n2x*PATH_HW, BRANCH_Z + 0*p2z + n2z*PATH_HW),
+    toSVG(p2a_end*p2x + n2x*PATH_HW, BRANCH_Z + p2a_end*p2z + n2z*PATH_HW),
+    toSVG(p2a_end*p2x - n2x*PATH_HW, BRANCH_Z + p2a_end*p2z - n2z*PATH_HW),
+    toSVG(0*p2x - n2x*PATH_HW, BRANCH_Z + 0*p2z - n2z*PATH_HW),
+  ];
+  svg += rect4(p2a_pts, '#ef5350', 0.35, '#ef5350', 1.2);
+
+  // Path2a label
+  const [p2lx, p2ly] = toSVG(p2a_end*p2x, BRANCH_Z + p2a_end*p2z);
+  svg += text(p2lx - 8, p2ly - 10, 'Path2a', '#ef5350', 10);
+  svg += text(p2lx - 8, p2ly + 6, '&rarr; Seal2 &rarr; W3', '#ef5350', 9);
+
+  // Angle arc
+  const arc_r = 45;
+  const [acx, acy] = toSVG(0, BRANCH_Z);
+  const a1x = acx, a1y = acy - arc_r;
+  const a2x = acx + arc_r*(-sin_t), a2y = acy - arc_r*cos_t;
+  svg += `<path d="M${a1x},${a1y} A${arc_r},${arc_r} 0 0,0 ${a2x},${a2y}" fill="none" stroke="#f0c040" stroke-width="1" stroke-dasharray="2,2"/>`;
+  svg += text((a1x+a2x)/2 - 14, (a1y+a2y)/2, `${angle_deg}&deg;`, '#f0c040', 11);
+
+  // Junction detail: highlight where Path2 meets Path1
+  svg += `<circle cx="${bpx}" cy="${bpy}" r="12" fill="none" stroke="#fff176" stroke-width="0.7" stroke-dasharray="2,2"/>`;
+
+  svg += '</svg>';
+  return { svg, w3x, w3z };
+}
+
+const container = document.getElementById('cards');
+const tbl = document.getElementById('tbl');
+ANGLES.forEach(a => {
+  const { svg, w3x, w3z } = buildCard(a);
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `<h2>&theta; = ${a}&deg;</h2>${svg}`;
+  container.appendChild(div);
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td style="text-align:left">${a}&deg;</td><td>500 &mu;m</td><td>300 &mu;m</td><td>200 &mu;m</td><td>(${(w3x/10000).toFixed(4)}, ${(w3z/10000).toFixed(4)}) cm</td>`;
+  tbl.appendChild(tr);
+});
+</script>
+</body>
+</html>

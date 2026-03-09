@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>hari200um 実測寸法</title>
+<style>
+  body { background: #0f1117; color: #e5e7eb; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+  h1 { color: #f59e0b; font-size: 1.3em; }
+  h2 { color: #60a5fa; margin-top: 0; font-size: 1.05em; }
+  .card { background: #1a1e2e; border-radius: 8px; padding: 16px; border: 1px solid #2d3348; margin: 16px 0; }
+  .flex { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  table { border-collapse: collapse; font-size: 12px; }
+  th, td { border: 1px solid #3d4560; padding: 3px 8px; text-align: left; }
+  th { background: #252a3a; color: #f59e0b; }
+  .section-title { color: #f59e0b; font-weight: bold; background: #252a3a; }
+  .note { background: #1a2235; border-left: 3px solid #f59e0b; padding: 8px 12px; margin: 10px 0; font-size: 12px; line-height: 1.6; }
+  svg text { font-family: 'Segoe UI', sans-serif; }
+</style>
+</head>
+<body>
+
+<h1>hari200um 実測寸法レポート</h1>
+<p style="color:#9ca3af; font-size:13px;">Fusion 360 MCP API で取得したジオメトリデータから算出。1ボディ（結合済み）、266面、1094頂点。</p>
+
+<!-- ===== 上面図 ===== -->
+<div class="card">
+<h2>上面図 — トレイ構造 + 空気穴</h2>
+<p style="color:#9ca3af; font-size:11px; margin:0 0 8px 0;">スケール: 1mm ≈ 20px。リム2mm幅、空気穴の位置を明示。</p>
+
+<!-- Outer: 29x11mm → 580x220px. Rim: 2mm=40px. Inner: 25x7mm → 500x140px -->
+<svg width="740" height="420" viewBox="-70 -70 810 490">
+
+  <!-- Outer tray -->
+  <rect x="0" y="0" width="580" height="220" rx="3" fill="#374151" stroke="#4b5563" stroke-width="1.5"/>
+
+  <!-- Rim areas (solid) -->
+  <!-- Front rim: Z=-0.55 to -0.35 → y=0 to 40 -->
+  <rect x="0" y="0" width="580" height="40" fill="#4a6741" opacity="0.6"/>
+  <!-- Back rim: Z=+0.35 to +0.55 → y=180 to 220 -->
+  <rect x="0" y="180" width="580" height="40" fill="#4a6741" opacity="0.6"/>
+  <!-- Left rim: X=-1.7 to -1.5 → x=0 to 40 -->
+  <rect x="0" y="40" width="40" height="140" fill="#4a6741" opacity="0.6"/>
+  <!-- Right rim: X=+1.0 to +1.2 → x=540 to 580 -->
+  <rect x="540" y="40" width="40" height="140" fill="#4a6741" opacity="0.6"/>
+
+  <!-- Air gaps in left/right rims -->
+  <!-- Left rim gap 1: Z=-0.35 to -0.1 → y=40 to 90 -->
+  <rect x="0" y="40" width="40" height="50" fill="#0f1117" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="20" y="68" fill="#ef4444" font-size="8" text-anchor="middle">air</text>
+  <text x="20" y="78" fill="#ef4444" font-size="7" text-anchor="middle">2.5mm</text>
+  <!-- Left rim gap 2: Z=+0.1 to +0.35 → y=130 to 180 -->
+  <rect x="0" y="130" width="40" height="50" fill="#0f1117" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="20" y="158" fill="#ef4444" font-size="8" text-anchor="middle">air</text>
+  <text x="20" y="168" fill="#ef4444" font-size="7" text-anchor="middle">2.5mm</text>
+  <!-- Right rim gap 1 -->
+  <rect x="540" y="40" width="40" height="50" fill="#0f1117" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="560" y="68" fill="#ef4444" font-size="8" text-anchor="middle">air</text>
+  <!-- Right rim gap 2 -->
+  <rect x="540" y="130" width="40" height="50" fill="#0f1117" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="560" y="158" fill="#ef4444" font-size="8" text-anchor="middle">air</text>
+
+  <!-- Front/back rim notch: Z=-0.1 to +0.1 → y=90 to 130, X full extent -->
+  <!-- These are 1mm below floor level notches through front/back rim -->
+  <rect x="0" y="90" width="40" height="40" fill="#4a6741" opacity="0.6"/>
+  <rect x="540" y="90" width="40" height="40" fill="#4a6741" opacity="0.6"/>
+
+  <!-- Inner cavity floor -->
+  <rect x="40" y="40" width="500" height="140" fill="#1a1e2e" stroke="#3d4560" stroke-width="0.5"/>
+
+  <!-- Device features inside cavity -->
+  <!-- Coordinate mapping: X=-1.5→x=40, X=+1.0→x=540, Z=-0.35→y=40, Z=+0.35→y=180 -->
+  <!-- Scale within cavity: X: 25mm=500px → 20px/mm, Z: 7mm=140px → 20px/mm -->
+
+  <!-- Taper: X=[-1.25,-0.75] Z=[-0.05,+0.05] → x=[90,190] y=[100,120] -->
+  <rect x="90" y="100" width="100" height="20" fill="#fb923c" opacity="0.5" rx="1"/>
+  <text x="140" y="97" fill="#fb923c" font-size="8" text-anchor="middle">Taper 5×1mm</text>
+
+  <!-- Guide outer: X=[-0.55,-0.15] Z=[-0.011,+0.011] → x=[230,310] y=[107.8,112.2] -->
+  <rect x="230" y="107" width="80" height="6" fill="#60a5fa" opacity="0.6"/>
+  <text x="270" y="103" fill="#60a5fa" font-size="7" text-anchor="middle">Guide 4mm</text>
+  <!-- Guide inner: X=[+0.15,+0.55] Z=[-0.011,+0.011] → x=[350,430] y=[107.8,112.2] -->
+  <rect x="350" y="107" width="80" height="6" fill="#60a5fa" opacity="0.6"/>
+  <text x="390" y="103" fill="#60a5fa" font-size="7" text-anchor="middle">Guide 4mm</text>
+
+  <!-- Seal: X=[-0.15,+0.15] Z=[-0.0085,+0.0085] → x=[310,350] y=[108.3,111.7] -->
+  <rect x="310" y="107" width="40" height="6" fill="#f87171" opacity="0.6"/>
+  <text x="330" y="120" fill="#f87171" font-size="7" text-anchor="middle">Seal 3mm</text>
+
+  <!-- Wells: center Z=±0.0885 → y=110±17.7 → y=92.3 and y=127.7, r=300μm=6px -->
+  <circle cx="340" cy="92" r="6" fill="#34d399" opacity="0.7"/>
+  <text x="352" y="90" fill="#34d399" font-size="7">Well ∅600μm</text>
+  <circle cx="340" cy="128" r="6" fill="#34d399" opacity="0.7"/>
+  <text x="352" y="130" fill="#34d399" font-size="7">Well ∅600μm</text>
+
+  <!-- Axon channels: X≈0 Z from wells to seal -->
+  <line x1="340" y1="98" x2="340" y2="107" stroke="#fbbf24" stroke-width="1.5" opacity="0.7"/>
+  <line x1="340" y1="113" x2="340" y2="122" stroke="#fbbf24" stroke-width="1.5" opacity="0.7"/>
+  <text x="355" y="112" fill="#fbbf24" font-size="7">Axon 74μm幅</text>
+
+  <!-- Needle axis -->
+  <line x1="80" y1="110" x2="540" y2="110" stroke="#aaa" stroke-width="0.5" stroke-dasharray="4,3" opacity="0.3"/>
+  <text x="500" y="142" fill="#aaa" font-size="8" opacity="0.4">← 針軸 (X方向) →</text>
+
+  <!-- Dimensions: outer -->
+  <line x1="0" y1="250" x2="580" y2="250" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="0" y1="245" x2="0" y2="255" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="580" y1="245" x2="580" y2="255" stroke="#9ca3af" stroke-width="0.8"/>
+  <text x="290" y="268" fill="#9ca3af" font-size="11" text-anchor="middle">29.0 mm (外寸X)</text>
+
+  <line x1="620" y1="0" x2="620" y2="220" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="615" y1="0" x2="625" y2="0" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="615" y1="220" x2="625" y2="220" stroke="#9ca3af" stroke-width="0.8"/>
+  <text x="650" y="114" fill="#9ca3af" font-size="11" text-anchor="middle" transform="rotate(90,650,114)">11.0 mm (外寸Z)</text>
+
+  <!-- Rim width -->
+  <line x1="0" y1="285" x2="40" y2="285" stroke="#4a8741" stroke-width="0.8"/>
+  <line x1="0" y1="280" x2="0" y2="290" stroke="#4a8741" stroke-width="0.5"/>
+  <line x1="40" y1="280" x2="40" y2="290" stroke="#4a8741" stroke-width="0.5"/>
+  <text x="20" y="298" fill="#4a8741" font-size="9" text-anchor="middle">2mm rim</text>
+
+  <!-- Inner dim -->
+  <line x1="40" y1="235" x2="540" y2="235" stroke="#3d4560" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <text x="290" y="245" fill="#3d4560" font-size="9" text-anchor="middle">25.0 mm (内寸X)</text>
+
+  <line x1="600" y1="40" x2="600" y2="180" stroke="#3d4560" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <text x="610" y="114" fill="#3d4560" font-size="9" text-anchor="middle" transform="rotate(90,610,114)">7.0 mm (内寸Z)</text>
+
+  <!-- Well separation -->
+  <line x1="340" y1="92" x2="340" y2="128" stroke="#34d399" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5"/>
+  <text x="368" y="112" fill="#34d399" font-size="7" opacity="0.6">1.77mm</text>
+
+  <!-- Legend -->
+  <g transform="translate(0, 320)">
+    <rect x="0" y="0" width="10" height="10" fill="#4a6741" opacity="0.6"/>
+    <text x="14" y="9" fill="#9ca3af" font-size="9">堤防 (リム)</text>
+    <rect x="100" y="0" width="10" height="10" fill="#34d399" opacity="0.7"/>
+    <text x="114" y="9" fill="#9ca3af" font-size="9">ウェル</text>
+    <rect x="170" y="0" width="10" height="10" fill="#f87171" opacity="0.6"/>
+    <text x="184" y="9" fill="#9ca3af" font-size="9">シール</text>
+    <rect x="230" y="0" width="10" height="10" fill="#60a5fa" opacity="0.6"/>
+    <text x="244" y="9" fill="#9ca3af" font-size="9">ガイド</text>
+    <rect x="290" y="0" width="10" height="10" fill="#fb923c" opacity="0.5"/>
+    <text x="304" y="9" fill="#9ca3af" font-size="9">テーパー</text>
+    <rect x="370" y="0" width="10" height="10" fill="#fbbf24" opacity="0.7"/>
+    <text x="384" y="9" fill="#9ca3af" font-size="9">軸索チャネル</text>
+    <rect x="460" y="0" width="10" height="10" fill="none" stroke="#ef4444" stroke-width="1"/>
+    <text x="474" y="9" fill="#9ca3af" font-size="9">空気穴</text>
+  </g>
+</svg>
+</div>
+
+<!-- ===== 断面図 ===== -->
+<div class="card">
+<h2>断面図 (Z方向、ウェル間を通る断面)</h2>
+<p style="color:#9ca3af; font-size:11px; margin:0 0 8px 0;">Y方向は拡大表示。実際は土台5mmに対しデバイス突起は最大0.45mm。</p>
+
+<svg width="700" height="360" viewBox="-70 -100 770 420">
+  <!-- Base block: 5mm → 150px -->
+  <rect x="0" y="0" width="580" height="150" fill="#374151" stroke="#4b5563" stroke-width="1"/>
+  <text x="290" y="80" fill="#6b7280" font-size="12" text-anchor="middle">土台 5.0mm</text>
+
+  <!-- Floor Y=0 -->
+  <line x1="-40" y1="0" x2="620" y2="0" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="3,2" opacity="0.4"/>
+  <text x="630" y="4" fill="#f59e0b" font-size="8">Y=0</text>
+
+  <!-- Front rim (Z=-0.55 side): x=0..40 -->
+  <rect x="0" y="-32" width="40" height="32" fill="#4a6741" stroke="#6b8f5e" stroke-width="1"/>
+  <text x="20" y="-36" fill="#6b8f5e" font-size="8" text-anchor="middle">rim</text>
+
+  <!-- Back rim (Z=+0.55 side): x=540..580 -->
+  <rect x="540" y="-32" width="40" height="32" fill="#4a6741" stroke="#6b8f5e" stroke-width="1"/>
+  <text x="560" y="-36" fill="#6b8f5e" font-size="8" text-anchor="middle">rim</text>
+
+  <!-- Inner cavity floor -->
+  <rect x="40" y="-2" width="500" height="2" fill="#1a1e2e"/>
+
+  <!-- PDMS level (rim top) -->
+  <line x1="0" y1="-32" x2="580" y2="-32" stroke="#4488ff" stroke-width="0.8" stroke-dasharray="5,3" opacity="0.3"/>
+  <text x="500" y="-38" fill="#4488ff" font-size="8" opacity="0.4">PDMS水面</text>
+
+  <!-- Well 1: center Z=-0.0885 → scale: Z mapped to x -->
+  <!-- Z=-0.55→x=0, Z=+0.55→x=580, so 1mm=52.7px -->
+  <!-- Well 1 center Z=-0.0885 → x = (0.55-0.0885)/1.1 * 580 = 0.4615/1.1*580 = 243px -->
+  <!-- Well 2 center Z=+0.0885 → x = (0.55+0.0885)/1.1 * 580 = 0.6385/1.1*580 = 337px -->
+  <!-- Well radius 300μm = 0.03cm → 15.8px -->
+
+  <!-- Well 1 -->
+  <rect x="227" y="-36" width="32" height="36" fill="#34d399" opacity="0.7" rx="3"/>
+  <text x="243" y="-42" fill="#34d399" font-size="8" text-anchor="middle">Well 1</text>
+  <text x="243" y="-52" fill="#34d399" font-size="7" text-anchor="middle">∅600μm, h=450μm</text>
+
+  <!-- Well 2 -->
+  <rect x="321" y="-36" width="32" height="36" fill="#34d399" opacity="0.7" rx="3"/>
+  <text x="337" y="-42" fill="#34d399" font-size="8" text-anchor="middle">Well 2</text>
+
+  <!-- Axon channel between wells -->
+  <!-- From well1 inner edge (~x=259) to seal start, and seal end to well2 inner edge (~x=321) -->
+  <rect x="259" y="-4" width="21" height="4" fill="#fbbf24" opacity="0.7"/>
+  <rect x="300" y="-4" width="21" height="4" fill="#fbbf24" opacity="0.7"/>
+  <text x="290" y="-8" fill="#fbbf24" font-size="7" text-anchor="middle">Axon 50μm高</text>
+
+  <!-- Seal at center -->
+  <rect x="275" y="-14" width="30" height="14" fill="#f87171" opacity="0.4"/>
+  <text x="290" y="-18" fill="#f87171" font-size="7" text-anchor="middle">Seal 170μm</text>
+
+  <!-- Well tops above PDMS -->
+  <line x1="227" y1="-36" x2="259" y2="-36" stroke="#34d399" stroke-width="1.5"/>
+  <line x1="321" y1="-36" x2="353" y2="-36" stroke="#34d399" stroke-width="1.5"/>
+  <text x="370" y="-34" fill="#34d399" font-size="7">↑50μm above rim</text>
+
+  <!-- Dimensions -->
+  <!-- Rim height -->
+  <line x1="-20" y1="-32" x2="-20" y2="0" stroke="#6b8f5e" stroke-width="0.8"/>
+  <line x1="-25" y1="-32" x2="-15" y2="-32" stroke="#6b8f5e" stroke-width="0.5"/>
+  <line x1="-25" y1="0" x2="-15" y2="0" stroke="#6b8f5e" stroke-width="0.5"/>
+  <text x="-30" y="-12" fill="#6b8f5e" font-size="9" text-anchor="end">0.4mm</text>
+
+  <!-- Base thickness -->
+  <line x1="-45" y1="0" x2="-45" y2="150" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="-50" y1="0" x2="-40" y2="0" stroke="#9ca3af" stroke-width="0.5"/>
+  <line x1="-50" y1="150" x2="-40" y2="150" stroke="#9ca3af" stroke-width="0.5"/>
+  <text x="-55" y="80" fill="#9ca3af" font-size="9" text-anchor="end">5.0mm</text>
+
+  <!-- Well height -->
+  <line x1="265" y1="-36" x2="265" y2="0" stroke="#34d399" stroke-width="0.5" stroke-dasharray="2,2"/>
+  <text x="268" y="-22" fill="#34d399" font-size="7">450μm</text>
+
+  <!-- Outer Z dimension -->
+  <line x1="0" y1="175" x2="580" y2="175" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="0" y1="170" x2="0" y2="180" stroke="#9ca3af" stroke-width="0.5"/>
+  <line x1="580" y1="170" x2="580" y2="180" stroke="#9ca3af" stroke-width="0.5"/>
+  <text x="290" y="190" fill="#9ca3af" font-size="10" text-anchor="middle">11.0 mm (Z方向)</text>
+
+  <!-- Rim width -->
+  <line x1="0" y1="200" x2="40" y2="200" stroke="#4a8741" stroke-width="0.8"/>
+  <text x="20" y="212" fill="#4a8741" font-size="8" text-anchor="middle">2mm</text>
+  <line x1="540" y1="200" x2="580" y2="200" stroke="#4a8741" stroke-width="0.8"/>
+  <text x="560" y="212" fill="#4a8741" font-size="8" text-anchor="middle">2mm</text>
+
+  <!-- Inner dim -->
+  <line x1="40" y1="165" x2="540" y2="165" stroke="#3d4560" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <text x="290" y="164" fill="#3d4560" font-size="8" text-anchor="middle">7.0 mm (内寸)</text>
+</svg>
+</div>
+
+<!-- ===== 断面図 X方向 ===== -->
+<div class="card">
+<h2>断面図 (X方向、針軸に沿った断面)</h2>
+
+<svg width="700" height="320" viewBox="-70 -90 770 380">
+  <!-- Base -->
+  <rect x="0" y="0" width="580" height="130" fill="#374151" stroke="#4b5563" stroke-width="1"/>
+  <text x="290" y="70" fill="#6b7280" font-size="11" text-anchor="middle">土台 5.0mm</text>
+
+  <!-- Y=0 -->
+  <line x1="-40" y1="0" x2="620" y2="0" stroke="#f59e0b" stroke-width="0.5" stroke-dasharray="3,2" opacity="0.4"/>
+
+  <!-- Left rim X=-1.7 → x=0 -->
+  <rect x="0" y="-32" width="40" height="32" fill="#4a6741" stroke="#6b8f5e" stroke-width="1"/>
+
+  <!-- Right rim X=+1.2 → x=580 -->
+  <rect x="540" y="-32" width="40" height="32" fill="#4a6741" stroke="#6b8f5e" stroke-width="1"/>
+
+  <!-- Scale X: -1.7→0, +1.2→580, 29mm=580px, 20px/mm -->
+  <!-- X=-1.5→40, X=-1.25→90, X=-0.75→190, X=-0.55→230, X=-0.15→310, X=0→340, X=+0.15→370, X=+0.55→430, X=+1.0→540 -->
+
+  <!-- Taper: X=[-1.25,-0.75] → x=[90,190], height 400μm=32px -->
+  <rect x="90" y="-32" width="100" height="32" fill="#fb923c" opacity="0.5" rx="1"/>
+  <text x="140" y="-38" fill="#fb923c" font-size="8" text-anchor="middle">Taper</text>
+  <text x="140" y="-48" fill="#fb923c" font-size="7" text-anchor="middle">5mm × 400μm</text>
+
+  <!-- Guide outer: X=[-0.55,-0.15] → x=[230,310], height 240μm=19px -->
+  <rect x="230" y="-19" width="80" height="19" fill="#60a5fa" opacity="0.5"/>
+  <text x="270" y="-23" fill="#60a5fa" font-size="7" text-anchor="middle">Guide 4mm×240μm</text>
+
+  <!-- Seal: X=[-0.15,+0.15] → x=[310,370], height 170μm=14px -->
+  <rect x="310" y="-14" width="60" height="14" fill="#f87171" opacity="0.5"/>
+  <text x="340" y="-18" fill="#f87171" font-size="7" text-anchor="middle">Seal 3mm×170μm</text>
+
+  <!-- Guide inner: X=[+0.15,+0.55] → x=[370,430], height 240μm -->
+  <rect x="370" y="-19" width="60" height="19" fill="#60a5fa" opacity="0.5"/>
+  <text x="400" y="-23" fill="#60a5fa" font-size="7" text-anchor="middle">Guide 4mm</text>
+
+  <!-- Well at X≈0 → x≈340, shown as small bump -->
+  <rect x="334" y="-36" width="12" height="36" fill="#34d399" opacity="0.6" rx="2"/>
+  <text x="340" y="-42" fill="#34d399" font-size="7" text-anchor="middle">Well 450μm</text>
+
+  <!-- Axon channel at X≈0, very thin -->
+  <rect x="338" y="-4" width="4" height="4" fill="#fbbf24" opacity="0.7"/>
+
+  <!-- PDMS level -->
+  <line x1="0" y1="-32" x2="580" y2="-32" stroke="#4488ff" stroke-width="0.8" stroke-dasharray="5,3" opacity="0.3"/>
+
+  <!-- Needle axis arrow -->
+  <line x1="80" y1="-16" x2="540" y2="-16" stroke="#aaa" stroke-width="0.5" stroke-dasharray="4,3" opacity="0.3"/>
+  <text x="490" y="-10" fill="#aaa" font-size="8" opacity="0.3">← 針挿入方向</text>
+
+  <!-- X dimension -->
+  <line x1="0" y1="155" x2="580" y2="155" stroke="#9ca3af" stroke-width="0.8"/>
+  <line x1="0" y1="150" x2="0" y2="160" stroke="#9ca3af" stroke-width="0.5"/>
+  <line x1="580" y1="150" x2="580" y2="160" stroke="#9ca3af" stroke-width="0.5"/>
+  <text x="290" y="170" fill="#9ca3af" font-size="10" text-anchor="middle">29.0 mm (X方向)</text>
+
+  <!-- Component spans -->
+  <line x1="90" y1="-55" x2="190" y2="-55" stroke="#fb923c" stroke-width="0.5"/>
+  <text x="140" y="-58" fill="#fb923c" font-size="7" text-anchor="middle">5mm</text>
+  <line x1="230" y1="-30" x2="310" y2="-30" stroke="#60a5fa" stroke-width="0.5"/>
+  <text x="270" y="-33" fill="#60a5fa" font-size="7" text-anchor="middle">4mm</text>
+  <line x1="310" y1="-22" x2="370" y2="-22" stroke="#f87171" stroke-width="0.5"/>
+  <text x="340" y="-25" fill="#f87171" font-size="7" text-anchor="middle">3mm</text>
+  <line x1="370" y1="-30" x2="430" y2="-30" stroke="#60a5fa" stroke-width="0.5"/>
+  <text x="400" y="-33" fill="#60a5fa" font-size="7" text-anchor="middle">4mm</text>
+</svg>
+</div>
+
+<!-- ===== 寸法表 ===== -->
+<div class="card">
+<h2>実測寸法一覧</h2>
+<div class="flex">
+
+<table>
+<tr><td colspan="4" class="section-title">トレイ外形</td></tr>
+<tr><th>項目</th><th>寸法</th><th>座標 (cm)</th><th>備考</th></tr>
+<tr><td>外寸 X</td><td>29.0 mm</td><td>X: -1.70 ～ +1.20</td><td></td></tr>
+<tr><td>外寸 Z</td><td>11.0 mm</td><td>Z: -0.55 ～ +0.55</td><td></td></tr>
+<tr><td>土台厚</td><td>5.0 mm</td><td>Y: -5.00 ～ 0.00</td><td></td></tr>
+<tr><td>全高</td><td>5.45 mm</td><td>Y: -5.00 ～ +0.45</td><td></td></tr>
+<tr><td colspan="4" class="section-title">堤防 (リム)</td></tr>
+<tr><td>リム幅</td><td>2.0 mm</td><td></td><td>四辺均等</td></tr>
+<tr><td>リム高</td><td>0.4 mm</td><td>Y: 0 ～ +0.40</td><td></td></tr>
+<tr><td>内寸 X</td><td>25.0 mm</td><td>X: -1.50 ～ +1.00</td><td></td></tr>
+<tr><td>内寸 Z</td><td>7.0 mm</td><td>Z: -0.35 ～ +0.35</td><td></td></tr>
+<tr><td colspan="4" class="section-title">空気穴</td></tr>
+<tr><td>左右リム</td><td>2.5mm幅 × 4箇所</td><td>Z: ±(0.10～0.35)</td><td>リム全高が途切れる</td></tr>
+<tr><td>前後リム</td><td>2.0mm幅 ノッチ</td><td>Z: -0.10～+0.10</td><td>Y=-0.1mmに溝</td></tr>
+</table>
+
+<table>
+<tr><td colspan="4" class="section-title">デバイス部品 (突出量)</td></tr>
+<tr><th>部品</th><th>XZ寸法</th><th>高さ</th><th>座標/備考</th></tr>
+<tr><td>ウェル ×2</td><td>∅ 600μm</td><td>450μm</td><td>中心 Z=±0.885mm<br>堤防より50μm高い</td></tr>
+<tr><td>テーパー</td><td>5.0mm × 1.0mm</td><td>400μm</td><td>X=[-1.25,-0.75]<br>堤防と面一</td></tr>
+<tr><td>ガイド ×2</td><td>各 4.0mm × 220μm</td><td>240μm</td><td>X=[-0.55,-0.15]<br>X=[+0.15,+0.55]</td></tr>
+<tr><td>シール</td><td>3.0mm × 170μm</td><td>170μm</td><td>X=[-0.15,+0.15]</td></tr>
+<tr><td>軸索チャネル</td><td>74μm幅 × 各~500μm長</td><td>50μm</td><td>Z方向、2ウェル間</td></tr>
+<tr><td colspan="4" class="section-title">hari200um vs 70°三角形 比較</td></tr>
+<tr><th>項目</th><th>hari200um</th><th>70°三角形</th><th></th></tr>
+<tr><td>リム幅</td><td>2.0 mm</td><td>1.0 mm (要修正?)</td><td></td></tr>
+<tr><td>リム高</td><td>0.4 mm</td><td>なし (要追加)</td><td></td></tr>
+<tr><td>土台厚</td><td>5.0 mm</td><td>0.5 mm (要修正)</td><td></td></tr>
+<tr><td>空気穴</td><td>6箇所</td><td>なし (要追加)</td><td></td></tr>
+<tr><td>ウェル数</td><td>2</td><td>3</td><td>70°三角形配置</td></tr>
+<tr><td>針数</td><td>1</td><td>2</td><td></td></tr>
+</table>
+
+</div>
+</div>
+
+<div class="note">
+<strong>70°三角形デバイスへの反映ポイント:</strong><br>
+1. リム幅を <b>1mm → 2mm</b> に変更<br>
+2. リム高 <b>0.4mm</b> を追加（ウェル450μmより50μm低い = PDMS面からウェル露出）<br>
+3. 土台厚を <b>0.5mm → 5mm</b> に変更<br>
+4. 空気穴を左右リムに各2箇所 + 前後リムにノッチ<br>
+5. 外寸を再計算: 内寸 + リム2mm×2 = 30×20mm上限内に収める
+</div>
+
+</body>
+</html>
